@@ -11,6 +11,12 @@ def correctString(string):
     result = vector[3] + vector[4]
     return result
 
+# Save a ndarray to a json file , nd = ndarray, jsonfile = 'file.json'
+def ndarray_to_json(nd , jsonfile):
+    with open(jsonfile, 'w') as outfile:
+        json.dump(pd.DataFrame.to_json(pd.DataFrame(nd),orient='index'), outfile)
+
+
 # Creates 2 ndarrays to get the nodes and the links
 nodes = []
 links = []
@@ -25,7 +31,6 @@ for index, row in csvdf.iterrows():
 
 # Get only the unique nodes
 nodes =  np.unique(nodes)
-
 
 # Get the correct links with the index after the pre-processing
 for index, row in csvdf.iterrows():
@@ -42,13 +47,5 @@ for index, row in csvdf.iterrows():
 # Get only the unique links
 links =  np.unique(links)
 
-# Transforms both dataframes (nodes and links) to JSON
-Json1 = pd.DataFrame.to_json(pd.DataFrame(nodes),orient='index')
-Json2 = pd.DataFrame.to_json(pd.DataFrame(links), orient='index')
-
-# Save those links to .json files
-with open('nodes.json', 'w') as outfile:
-    json.dump(Json1, outfile)
-
-with open('links.json', 'w') as outfile:
-    json.dump(Json2, outfile)
+ndarray_to_json(nodes,'nodes.json')
+ndarray_to_json(links,'links.json')
