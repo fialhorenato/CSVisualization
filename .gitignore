@@ -1,3 +1,7 @@
-# .csv files because they're to heavy
+# .csv files because they're to heavy t
 
 *.csv
+
+#.json files
+
+*.json

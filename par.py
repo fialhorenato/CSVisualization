@@ -1,9 +1,15 @@
 import pandas as pd
 import numpy as np
 import json
+import sys
 
+# Get the parameters
+params = sys.argv
 # Open the csv file using pandas
-csvdf =  pd.read_csv('teste.csv',keep_default_na=False,na_values=[" "])
+if  (len(params) > 1 and params[1] != ''):
+    csvdf =  pd.read_csv(params[1],keep_default_na=False,na_values=[" "])
+else:
+    csvdf =  pd.read_csv('teste.csv',keep_default_na=False,na_values=[" "])
 
 # Takes this string as example (ATOM_1_N_THR_2_A,) and got only the residue (THR2)
 def correctString(string):
