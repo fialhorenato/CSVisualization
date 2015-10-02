@@ -54,7 +54,7 @@ for index, row in csvdf.iterrows():
         index2 = nodes.tolist().index(obj2)
         link["source"] = index1
         link["target"] = index2
-        link["weight"] = round(row['distance'])
+        link["value"] = round(row['distance'])
         link["type"] = row['interaction']
         links.append(link)
 
