@@ -20,7 +20,12 @@ def correctString(string):
 # Save a ndarray to a json file , nd = ndarray, jsonfile = 'file.json'
 def ndarray_to_json(nd , jsonfile):
     with open(jsonfile, 'w') as outfile:
-        json.dump(pd.DataFrame.to_json(pd.DataFrame(nd),orient='index'), outfile)
+        json.dump(pd.DataFrame.to_json(pd.DataFrame(nd),orient='values'), outfile)
+
+def getIndexOfNodes(l, index, value):
+    for pos,t in enumerate(l):
+        if t[index] == value:
+            return pos
 
 
 # Creates 2 ndarrays to get the nodes and the links
@@ -32,8 +37,11 @@ for index, row in csvdf.iterrows():
     if(row['interaction'] != ""):
         string = correctString(row['atom1'])
         string2 = correctString(row['atom2'])
-        nodes.append(string)
-        nodes.append(string2)
+        obj = {}
+        obj['name'] = string
+        nodes.append(obj)
+        obj['name'] = string2
+        nodes.append(obj)
 
 # Get only the unique nodes
 nodes =  np.unique(nodes)
@@ -41,17 +49,25 @@ nodes =  np.unique(nodes)
 # Get the correct links with the index after the pre-processing
 for index, row in csvdf.iterrows():
     if(row['interaction'] != ""):
-        link = {}
-        string = correctString(row['atom1'])
-        string2 = correctString(row['atom2'])
-        index1 = nodes.tolist().index(string)
-        index2 = nodes.tolist().index(string2)
-        link["x"] = index1
-        link["y"] = index2
+        link = {};obj1 = {};obj2 = {};
+        obj1['name'] = correctString(row['atom1'])
+        obj2['name'] = correctString(row['atom2'])
+        index1 = nodes.tolist().index(obj1)
+        index2 = nodes.tolist().index(obj2)
+        link["source"] = index1
+        link["target"] = index2
+        link["weight"] = row['distance']
         links.append(link)
 
 # Get only the unique links
 links =  np.unique(links)
 
-ndarray_to_json(nodes,'nodes.json')
-ndarray_to_json(links,'links.json')
+
+# Save the json generated from those files to nodes.json and links.json
+
+if  (len(params) > 1 and params[1] != ''):
+    ndarray_to_json(nodes,params[1].split(".")[0] + "nodes.json")
+    ndarray_to_json(links,params[1].split(".")[0] + "links.json")
+else:
+    ndarray_to_json(nodes,'nodes.json')
+    ndarray_to_json(links,'links.json')
