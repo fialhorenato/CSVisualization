@@ -29,88 +29,82 @@ stroke-width: 2px;
 
 var nodes = [],links = [];
 
-d3.json("nodes.json", function(data) {
-  d3.json("links.json", function(data2) {
-     root = JSON.parse( data );
-     root2 = JSON.parse( data2 );
-     for (item in root) {
-        for(item2 in root[item]){
-          nodes.push(root[item][item2]);
-        }
-     }
-     for (item in root2) {
-        for(item2 in root2[item]){
-          links.push(root2[item][item2]);
-        }
-     }
+d3.json("graph.json", function(error, data) {
+  if (error) return console.warn(error);
 
-     for (n in nodes){
-           nodes[n].x = Math.random() * (1000 - 0) + 0;;
-           nodes[n].y = Math.random() * (1000 - 0) + 0;;
-    }
+  for (item in data.links) {
+    links.push(data.links[item])
+  }
 
-    var width = 1000,
-    height = 1000;
+  for (item in data.nodes) {
+    nodes.push(data.nodes[item])
+  }
 
-    var svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+  console.log(nodes)
+
+  var width = 1000,
+  radius = 10 - .75,
+  height = 1000;
+
+  var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
 
-    var force = d3.layout.force()
-        .size([width, height])
-        .nodes(nodes)
-        .links(links);
+  var force = d3.layout.force()
+      .size([width, height])
+      .nodes(nodes)
+      .links(links);
 
-    force.linkDistance(width/2);
+  force.linkDistance(width/2);
 
-    var link = svg.selectAll('.link')
-    .data(links)
-    .enter().append('line')
-    .attr('class', 'link');
+  var link = svg.selectAll('.link')
+  .data(links)
+  .enter().append('line')
+  .attr('class', 'link');
 
-    var node = svg.selectAll('.node')
-    .data(nodes)
-    .enter().append('circle')
-    .attr('class', 'node')
-    .attr("r", function(d) { return d.weight; })
+  var node = svg.selectAll('.node')
+  .data(nodes)
+  .enter().append('circle')
+  .attr('class', 'node');
 
-    force.on('end', function() {
+  force.on('end', function() {
 
-        // When this function executes, the force layout
-        // calculations have concluded. The layout will
-        // have set various properties in our nodes and
-        // links objects that we can use to position them
-        // within the SVG container.
+      // When this function executes, the force layout
+      // calculations have concluded. The layout will
+      // have set various properties in our nodes and
+      // links objects that we can use to position them
+      // within the SVG container.
 
-        // First let's reposition the nodes. As the force
-        // layout runs it updates the `x` and `y` properties
-        // that define where the node should be centered.
-        // To move the node, we set the appropriate SVG
-        // attributes to their new values. We also have to
-        // give the node a non-zero radius so that it's visible
-        // in the container.
+      // First let's reposition the nodes. As the force
+      // layout runs it updates the `x` and `y` properties
+      // that define where the node should be centered.
+      // To move the node, we set the appropriate SVG
+      // attributes to their new values. We also have to
+      // give the node a non-zero radius so that it's visible
+      // in the container.
 
-        node.attr('r', width/25)
-            .attr('cx', function(d) { return d.x; })
-            .attr('cy', function(d) { return d.y; });
+      node.attr('cx', function(d) { return d.x; })
+          .attr('cy', function(d) { return d.y; })
+          .attr("r", radius);
 
-        // We also need to update positions of the links.
-        // For those elements, the force layout sets the
-        // `source` and `target` properties, specifying
-        // `x` and `y` values in each case.
+      // We also need to update positions of the links.
+      // For those elements, the force layout sets the
+      // `source` and `target` properties, specifying
+      // `x` and `y` values in each case.
 
-        link.attr('x1', function(d) { return d.source.x; })
-            .attr('y1', function(d) { return d.source.y; })
-            .attr('x2', function(d) { return d.source.x; })
-            .attr('y2', function(d) { return d.source.y; });
+      link.attr('x1', function(d) { return d.target.x; })
+          .attr('y1', function(d) { return d.target.y; })
+          .attr('x2', function(d) { return d.source.x; })
+          .attr('y2', function(d) { return d.source.y; });
 
-    });
+  });
 
-    force.start();
+  force.start();
 
-   });
 });
+
+
 
 
 </script>

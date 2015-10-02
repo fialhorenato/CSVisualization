@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 import sys
+from array import array
 
 # Get the parameters
 params = sys.argv
@@ -16,11 +17,6 @@ def correctString(string):
     vector = string.split("_")
     result = vector[3] + vector[4]
     return result
-
-# Save a ndarray to a json file , nd = ndarray, jsonfile = 'file.json'
-def ndarray_to_json(nd , jsonfile):
-    with open(jsonfile, 'w') as outfile:
-        json.dump(pd.DataFrame.to_json(pd.DataFrame(nd),orient='values'), outfile)
 
 def getIndexOfNodes(l, index, value):
     for pos,t in enumerate(l):
@@ -37,14 +33,16 @@ for index, row in csvdf.iterrows():
     if(row['interaction'] != ""):
         string = correctString(row['atom1'])
         string2 = correctString(row['atom2'])
-        obj = {}
+        obj = {}; obj2 ={}
         obj['name'] = string
         nodes.append(obj)
-        obj['name'] = string2
-        nodes.append(obj)
+        obj2['name'] = string2
+        nodes.append(obj2)
 
 # Get only the unique nodes
 nodes =  np.unique(nodes)
+
+
 
 # Get the correct links with the index after the pre-processing
 for index, row in csvdf.iterrows():
@@ -56,18 +54,19 @@ for index, row in csvdf.iterrows():
         index2 = nodes.tolist().index(obj2)
         link["source"] = index1
         link["target"] = index2
-        link["weight"] = row['distance']
+        link["weight"] = round(row['distance'])
+        link["type"] = row['interaction']
         links.append(link)
 
 # Get only the unique links
 links =  np.unique(links)
 
+linksdf = pd.DataFrame.from_dict(links, orient='columns')
+nodesdf = pd.DataFrame.from_dict(nodes, orient='columns')
 
-# Save the json generated from those files to nodes.json and links.json
+graph = {}
+graph['links']= links.tolist()
+graph['nodes'] = nodes.tolist()
 
-if  (len(params) > 1 and params[1] != ''):
-    ndarray_to_json(nodes,params[1].split(".")[0] + "nodes.json")
-    ndarray_to_json(links,params[1].split(".")[0] + "links.json")
-else:
-    ndarray_to_json(nodes,'nodes.json')
-    ndarray_to_json(links,'links.json')
+with open("graph.json", 'w') as outfile:
+    json.dump(graph,outfile)
