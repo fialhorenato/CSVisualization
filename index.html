@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="d3.min.js" charset="utf-8"></script>
+    <script src="js/jquery2.js" charset="utf-8"></script>
+    <script src="js/d3.min.js" charset="utf-8"></script>
+    <script src="js/bootstrap.min.js" charset="utf-8"></script>
+    <script src="js/index.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
 
     <style>
     path.link {
@@ -38,6 +43,37 @@
       stroke-width: 3px;
       stroke-opacity: .8;
     }
+
+    .d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #7CDBAE;
+  border-radius: 2px;
+  z-index: 2;
+  max-width: 40%;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8)
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
 
 </style>
 </head>
@@ -88,8 +124,33 @@ d3.json("graph.json", function(error, data) {
     link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
   });
 
-  var w = 1200,
-      h = 1200;
+
+  var nodetip = d3.tip()
+      .attr('class', 'd3-tip atom-tip')
+      .offset([-10, 0])
+      .html(function(d) {
+        var html = "<strong>Residue name:</strong> <span style='color:white'>" + d.name + "</span><br><br>";
+        return html;
+      });
+
+
+  /* Initialize tooltip */
+  //nodetip = d3.tip().html(function(d) { return d.name; });
+
+  var linktip = d3.tip()
+      .attr('class', 'd3-tip')
+      .offset([-10, 0])
+      .html(function(d) {
+        return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + " - " + d.target.name + "</span><br><br>"
+              + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
+
+      });
+
+
+
+
+  var w = 800,
+      h = 600;
 
   var force = d3.layout.force()
       .nodes(d3.values(nodes))
@@ -100,18 +161,21 @@ d3.json("graph.json", function(error, data) {
       .on("tick", tick)
       .start();
 
-  var svg = d3.select("body").append("svg:svg")
+  var svg = d3.select("#grafo").append("svg:svg")
       .attr("width", w)
       .attr("height", h)
       .call(d3.behavior.zoom().on("zoom", function () {
-   svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
- }))
- .append("g")
+      svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")}))
+      .append("g")
+      .call(nodetip)
+      .call(linktip);
+
+
 
   // Per-type markers, as they don't inherit styles.
   svg.append("svg:defs").selectAll("marker")
-      .data(["suit", "licensing", "resolved"])
-    .enter().append("svg:marker")
+      .data(["end"])      // Different link/path types can be defined here
+      .enter().append("svg:marker")    // This section adds in the arrows
       .attr("id", String)
       .attr("viewBox", "0 -5 10 10")
       .attr("refX", 15)
@@ -119,23 +183,39 @@ d3.json("graph.json", function(error, data) {
       .attr("markerWidth", 6)
       .attr("markerHeight", 6)
       .attr("orient", "auto")
-    .append("svg:path")
+      .append("svg:path")
       .attr("d", "M0,-5L10,0L0,5");
 
 
   var path = svg.append("svg:g").selectAll("path")
       .data(force.links())
       .enter().append("svg:path")
-      .attr("class", function(d) { return "link " + d.type; })
-      .attr("marker-end", function(d) { return "url(#" + d.type + ")"; })
-      .style("stroke", function(d) {return d.color;});
+      .attr("class", "link")
+      //.attr("marker-end", "url(#end)")
+      //.attr("marker-start", "url(#end")
+      .style("stroke", function(d) {return d.color;})
+      .on('mouseover', linktip.show)
+      .on('mouseout', linktip.hide);
 
   var circle = svg.append("svg:g").selectAll("circle")
       .data(force.nodes())
-    .enter().append("svg:circle")
+      .enter().append("svg:circle")
       .attr("r", 6)
-      .call(force.drag);
+      .call(force.drag)
+      .on('mouseover', nodetip.show)
+      .on('mouseout', nodetip.hide);
 
+
+      circle.selectAll('rect')
+      .data(data)
+      .enter().append('rect')
+      .attr('width', function() { return x.rangeBand() })
+      .attr('height', function(d) { return h - y(d) })
+      .attr('y', function(d) { return y(d) })
+      .attr('x', function(d, i) { return x(i) })
+      /* Show and hide tip on mouse events */
+
+/**
   var text = svg.append("svg:g").selectAll("g")
       .data(force.nodes())
       .enter().append("svg:g");
@@ -151,6 +231,7 @@ d3.json("graph.json", function(error, data) {
       .attr("x", 8)
       .attr("y", ".31em")
       .text(function(d) { return d.name; });
+      **/
 
   // Use elliptical arc path segments to doubly-encode directionality.
   function tick() {
@@ -165,14 +246,146 @@ d3.json("graph.json", function(error, data) {
       return "translate(" + d.x + "," + d.y + ")";
     });
 
-    text.attr("transform", function(d) {
-      return "translate(" + d.x + "," + d.y + ")";
-    });
+    //text.attr("transform", function(d) {
+    //  return "translate(" + d.x + "," + d.y + ")";
+    //});
   }
+
+    var interColor = ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"];
+
+    var graphSelections = { "atoms": ["Acceptor","Aromatic", "Donor","Hydrophobic","Negative","Positive"],
+                      "interactions": ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"] };
+
 
 });
 
+$('body').on("click", ".multiselect-div ul li input", function(event) {
+
+    var multiselect = $(this).parents('.multiselect-div');
+
+    var selections = [];
+    multiselect.find('input[type="checkbox"]:checked').each(function() {
+      var item = $(this).val();
+      selections.push(item);
+    });
+
+    var text;
+    if (selections.length === 0) text = ( multiselect.hasClass("atom-select") ) ? "Any selected atom" : "Any selected interaction";
+    else if (selections.length > 0 && selections.length <= 1) text = selections.join(", ");
+    else text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected atoms" : selections.length + " selected interactions";
+    multiselect.find('.multiselect-selected-text').text(text);
+
+    if ( multiselect.hasClass("atom-select") ) graphSelections.atoms = selections;
+    else graphSelections.interactions = selections;
+
+    update_graph();
+});
+
+var graphSelections = { "atoms": ["Acceptor","Aromatic", "Donor","Hydrophobic","Negative","Positive"],
+                   "interactions": ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"] };
+
+                   function update_graph() {
+
+                      var links = d3.selectAll(".link").style("opacity",1);
+
+
+
+                     links.filter( function(d) {
+                       var types = d.type.split("/");
+                       var linkNotSelected = true;
+                       for (var i in types) {
+                         if ( $.inArray(types[i], graphSelections.interactions) !== -1) {
+                           linkNotSelected = false;
+                           break;
+                         }
+                       }
+                       return linkNotSelected;
+                     }).style("opacity", 0.2);
+
+                     var nodesToResize = [];
+
+                     var nodesToHide = {}; // Added in according to the component.
+                     var linksToHide = []; // Added in according to the component.
+
+
+                     for (var i in nodesToResize) {
+                       nodesToResize[i].attr("r", radiusHighlight);
+                     }
+
+
+                   }
+
+
+
+   $('.multiselect-div .dropdown-menu input').prop("checked", true);
+
+   function applyGraphSelections() {
+         var nodes = d3.selectAll(".nodes").style("opacity", .3);
+         var links = d3.selectAll(".link").style("opacity", .3);
+
+         nodes.filter( function(d) {
+           var types = d.type.split("/");
+           for (var i in types) {
+             if ( $.inArray(types[i], graphSelections.atoms) !== -1 ) return 1;
+           }
+         }).style("opacity", 1);
+
+         links.filter( function(d) {
+           return ( $.inArray(d.interaction, graphSelections.interactions) !== -1 )
+         }).style("opacity", 1);
+  }
+
 </script>
-<div id="chart"></div>
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">
+        LIGANDS
+      </a>
+    </div>
+
+
+        </div>
+  </div>
+</nav>
+<div class="row">
+  <div class="col-md-2" align = "center">
+    <div class="page-header">
+  <h1> Interactions </h1>
+  </div>
+
+  <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#E36262"> Aromatic stacking</p></br>
+  <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#02B7DB"> Hydrogen bond</p></br>
+  <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#F0ED67"> Hydrophobic</p></br>
+  <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#512B8B"> Repulsive</p></br>
+  <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#519136"> Salt bridge</p></br>
+
+</div>
+    <div class="col-md-8" id="grafo" align="center">
+      <div class="page-header">
+  <h1> Grafo </h1>
+</div>
+    </div>
+  <div class="col-md-2  "><div class="page-header">
+<h1> Filtros </h1>
+</div>
+
+<div class="col-lg-12 ">
+  <!-- Single button -->
+  <div class="btn-group multiselect-div inter-select">
+              <button type="button" class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span class="multiselect-selected-text">Select the interactions</span> <span class="caret"></b>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Aromatic stacking">Aromatic stacking</label></a></li>
+                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrogen bond">Hydrogen bond</label></a></li>
+                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrophobic">Hydrophobic</label></a></li>
+                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Repulsive">Repulsive</label></a></li>
+                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Salt bridge">Salt bridge</label></a></li>
+              </ul>
+            </div>
+     </div>
+</div>
+</div>
 </body>
 </html>
