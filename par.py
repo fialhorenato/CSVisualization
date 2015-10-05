@@ -4,6 +4,9 @@ import json
 import sys
 from array import array
 
+#Define the colors for the links
+interColor = { "Aromatic stacking": "#E36262","Hydrogen bond": "#02B7DB","Hydrophobic": "#F0ED67","Repulsive": "#512B8B","Salt bridge": "#519136" }
+
 # Get the parameters
 params = sys.argv
 # Open the csv file using pandas
@@ -22,6 +25,7 @@ def getIndexOfNodes(l, index, value):
     for pos,t in enumerate(l):
         if t[index] == value:
             return pos
+
 
 
 # Creates 2 ndarrays to get the nodes and the links
@@ -56,6 +60,8 @@ for index, row in csvdf.iterrows():
         link["target"] = index2
         link["value"] = round(row['distance'])
         link["type"] = row['interaction']
+        link["color"] = interColor.values()[interColor.keys().index(row['interaction'].strip())]
+
         links.append(link)
 
 # Get only the unique links
