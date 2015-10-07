@@ -6,6 +6,7 @@
   <script src="js/d3.min.js" charset="utf-8"></script>
   <script src="js/bootstrap.min.js" charset="utf-8"></script>
   <script src="js/index.js" charset="utf-8"></script>
+  <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <script src="js/bootstrap-colorpicker.min.js" charset="utf-8"></script>
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/bootstrap-colorpicker.min.css">
@@ -145,7 +146,7 @@
       .attr('class', 'd3-tip')
       .offset([-10, 0])
       .html(function(d) {
-        return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + " - " + d.target.name + "</span><br><br>"
+        return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + "/" + d.source.type + " - " + d.target.name + "/" + d.target.type +  "</span><br><br>"
         + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
         + "<strong>Distance:</strong> <span style='color:white'>" + d.distance + "</span><br><br>"
 
@@ -161,10 +162,16 @@
       .nodes(d3.values(nodes))
       .links(links)
       .size([w, h])
-      .linkDistance(60)
+      .linkDistance(function(d) { return  (d.distance * 30); })
       .charge(-500)
       .on("tick", tick)
       .start();
+
+
+
+   force.linkDistance(function(d) { return  d.distance + 60; });
+
+
 
       var svg = d3.select("#grafo").append("svg:svg")
       .attr("width", w)
@@ -533,6 +540,25 @@
             </ul>
           </div>
 
+          <div class="page-header">
+            <h3> Change color pattern </h3>
+          </div>
+
+          <div class="input-group">
+            <input type="TextBox" ID="datebox" Class="form-control" value = "CINEMA"></input>
+            <div class="input-group-btn">
+              <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                <span class="caret"></span>
+              </button>
+              <ul id="colorlist" class="dropdown-menu">
+                <li><a href="#">CINEMA</a></li>
+                <li><a href="#">CLUSTAL</a></li>
+                <li><a href="#">LESK</a></li>
+              </ul>
+            </div>
+          </div>
+
+
           <script>
           $('#clearSearchBtn').on("click", function() {
             d3.selectAll(".nodes")
@@ -556,6 +582,26 @@
                 return d;
               }
             }).style("fill",filterColor).style("stroke",'#333').style("stroke-width", "1.5px").style("opacity", 1);
+
+          });
+
+          $("#colorlist li").click(function(){
+            var choice = $(this).text();
+
+            $('#datebox').val($(this).text());
+
+
+            if (choice == "CINEMA") {
+              d3.selectAll(".nodes")
+              .style("fill",function(d) { return d.cinema_color });
+            } else if (choice == "CLUSTAL") {
+              d3.selectAll(".nodes")
+              .style("fill",function(d) { return d.clustal_color });
+            } else if (choice == "LESK") {
+              d3.selectAll(".nodes")
+              .style("fill",function(d) { return d.lesk_color });
+            }
+
 
           });
           </script>
