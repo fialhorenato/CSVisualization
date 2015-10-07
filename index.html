@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+
   <script src="js/jquery2.js" charset="utf-8"></script>
   <script src="js/d3.min.js" charset="utf-8"></script>
   <script src="js/bootstrap.min.js" charset="utf-8"></script>
   <script src="js/index.js" charset="utf-8"></script>
+  <script src="js/bootstrap-colorpicker.min.js" charset="utf-8"></script>
   <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap-colorpicker.min.css">
 
 
   <style>
@@ -28,7 +31,7 @@
   }
 
   circle {
-    fill: #ccc;
+    /** fill: #ccc; **/
     stroke: #333;
     stroke-width: 1.5px;
   }
@@ -129,7 +132,8 @@
       .attr('class', 'd3-tip atom-tip')
       .offset([-10, 0])
       .html(function(d) {
-        var html = "<strong>Residue name:</strong> <span style='color:white'>" + d.name + "</span><br><br>";
+        var html = "<strong>Residue name:</strong> <span style='color:white'>" + d.name + "</span><br><br>"
+        + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
         return html;
       });
 
@@ -143,8 +147,12 @@
       .html(function(d) {
         return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + " - " + d.target.name + "</span><br><br>"
         + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
+        + "<strong>Distance:</strong> <span style='color:white'>" + d.distance + "</span><br><br>"
 
       });
+
+
+
 
       var w = 800,
       h = 600;
@@ -154,7 +162,7 @@
       .links(links)
       .size([w, h])
       .linkDistance(60)
-      .charge(-300)
+      .charge(-500)
       .on("tick", tick)
       .start();
 
@@ -191,13 +199,16 @@
         //.attr("marker-end", "url(#end)")
         //.attr("marker-start", "url(#end")
         .style("stroke", function(d) {return d.color;})
+        //.style("stroke-width", function(d) {return d.distance - 2;})
         .on('mouseover', linktip.show)
         .on('mouseout', linktip.hide);
 
         var circle = svg.append("svg:g").selectAll("circle")
         .data(force.nodes())
         .enter().append("svg:circle")
+        .attr("class","nodes")
         .attr("r", 6)
+        .attr("fill", function(d) { return d.cinema_color })
         .call(force.drag)
         .on('mouseover', nodetip.show)
         .on('mouseout', nodetip.hide);
@@ -248,10 +259,13 @@
           //});
         }
 
-      });
+        var interColor = ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"];
 
-      var graphSelections = { "atoms": ["Acceptor","Aromatic", "Donor","Hydrophobic","Negative","Positive"],
-      "interactions": ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"] };
+        var graphSelections = { "atoms": ["Acceptor","Aromatic", "Donor","Hydrophobic","Negative","Positive"],
+        "interactions": ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"] };
+
+
+      });
 
       $('body').on("click", ".multiselect-div ul li input", function(event) {
 
@@ -264,9 +278,9 @@
         });
 
         var text;
-        if (selections.length === 0) text = ( multiselect.hasClass("atom-select") ) ? "Any selected atom" : "Any selected interaction";
+        if (selections.length === 0) text = ( multiselect.hasClass("atom-select") ) ? "Any selected type" : "Any selected interaction";
         else if (selections.length > 0 && selections.length <= 1) text = selections.join(", ");
-        else text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected atoms" : selections.length + " selected interactions";
+        else text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected types" : selections.length + " selected interactions";
         multiselect.find('.multiselect-selected-text').text(text);
 
         if ( multiselect.hasClass("atom-select") ) graphSelections.atoms = selections;
@@ -274,10 +288,21 @@
 
         update_graph();
       });
-            
+
+      var graphSelections = { "atoms": ["Acceptor","Aromatic", "Donor","Hydrophobic","Negative","Positive"],
+      "interactions": ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"] };
+
       function update_graph() {
 
         var links = d3.selectAll(".link").style("opacity",1);
+        var nodes = d3.selectAll(".nodes").style("opacity", .3);
+
+        nodes.filter( function(d) {
+          var types = d.type.split("/");
+          for (var i in types) {
+            if ( $.inArray(types[i], graphSelections.atoms) !== -1 ) return 1;
+          }
+        }).style("opacity", 1);
 
 
 
@@ -298,11 +323,53 @@
         var nodesToHide = {}; // Added in according to the component.
         var linksToHide = []; // Added in according to the component.
 
+        $(".slider").each(function(d) {
+
+          var slider = $(this).find(".slider-range");
+          var key = get_slider_key( $(this).attr("id") );
+          var min = slider.slider("values",0);
+          var max = slider.slider("values",1);
+
+          if ( key !== "weight" && key !== "edge betweenness centrality" && key !== "component"){
+            nodes.filter( function(d) {
+              var value = roundNumber( d[key], 2 );
+              return ( value < min || value > max );
+            }).style("opacity",0.2).attr("r", radius);
+
+            if ( min !== propertiesExtent[key][0] ) {
+              var filtered = nodes.filter( function(d) {
+                var value = roundNumber( d[key], 2 );
+                return ( value >= min && value <= max );
+              });
+              nodesToResize.push(filtered);
+            }
+          }
+          else if (key === "component") {
+            links.each(function(d){
+              var component = d.source.component;
+              if ( numEdgesByComponents[component] < min || numEdgesByComponents[component] > max) {
+                linksToHide.push(this);
+                nodesToHide[d.source.id] = 1;
+                nodesToHide[d.target.id] = 1;
+              }
+            });
+          }
+          else {
+            links.filter( function(d) {
+              var value = roundNumber( d[key], 2 );
+              return ( value < min || value > max);
+            }).style("opacity",0.2);
+          }
+        });
 
         for (var i in nodesToResize) {
           nodesToResize[i].attr("r", radiusHighlight);
         }
 
+        nodes.filter(function(d) { return ( d.id in nodesToHide ); }).style("opacity", 0.3);
+        for (var i in linksToHide) {
+          d3.select(linksToHide[i]).style("opacity","0.3");
+        }
 
       }
 
@@ -326,6 +393,10 @@
         }).style("opacity", 1);
       }
 
+      $(function(){
+        $('.input-color-picker').colorpicker( { input: '' }).colorpicker('setValue', "blue");
+      });
+
       </script>
       <nav class="navbar navbar-default">
         <div class="container-fluid">
@@ -340,9 +411,9 @@
       </div>
     </nav>
     <div class="row">
-      <div class="col-md-2" align = "center">
+      <div class="col-md-2 col-md-offset-1">
         <div class="page-header">
-          <h1> Interactions </h1>
+          <h1> Edges </h1>
         </div>
 
         <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#E36262"> Aromatic stacking</p></br>
@@ -351,18 +422,73 @@
         <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#512B8B"> Repulsive</p></br>
         <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#519136"> Salt bridge</p></br>
 
+        <div class="page-header">
+          <h1> Nodes </h1>
+        </div>
+        <h3> Cinema </h3>
+
+        <div class="row">
+          <div class="col-md-6">
+            <h5 style="color:#1240AB"> Polar Positive </h5>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#1240AB"> H</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#1240AB"> K</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#1240AB"> R</p></br>
+          </div>
+
+          <div class="col-md-6">
+            <h5 style="color:#BF3030"> Polar Negative </h5>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#BF3030"> D</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#BF3030"> E</p></br>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <h5 style="color:#9F3ED5"> Polar Neutral </h5>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> N</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> Q</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> S</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> T</p></br>
+          </div>
+
+          <div class="col-md-6">
+            <h5 style="color:#4EA429"> Non-Polar Aliphatic </h5>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> A</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> G</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> I</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> L</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> M</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> V</p></br>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <h5 style="color:#009999"> Non-Polar Rings </h5>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> F</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> P</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> W</p></br>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> Y</p></br>
+          </div>
+
+          <div class="col-md-6">
+            <h5 style="color:#FFAA00"> Cysteine </h5>
+            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#FFAA00"> C</p></br>
+          </div>
+        </div>
       </div>
-      <div class="col-md-8" id="grafo" align="center">
+      <div class="col-md-6" id="grafo" align="center">
         <div class="page-header">
           <h1> Grafo </h1>
         </div>
       </div>
-      <div class="col-md-2  "><div class="page-header">
-        <h1> Filtros </h1>
-      </div>
+      <div class="col-md-2  ">
+        <div class="page-header">
+          <h1> Filtros </h1>
+        </div>
 
-      <div class="col-lg-12 ">
-        <!-- Single button -->
+
+        <div class="page-header">
+          <h3> Filter by link type </h3>
+        </div>
         <div class="btn-group multiselect-div inter-select">
           <button type="button" class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
             <span class="multiselect-selected-text">Select the interactions</span> <span class="caret"></b>
@@ -375,8 +501,70 @@
               <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Salt bridge">Salt bridge</label></a></li>
             </ul>
           </div>
-        </div>
+          <div class="page-header">
+            <h3> Search by residue name </h3>
+          </div>
+          <div class="input-group input-color-picker">
+            <input type="text" class="form-control input-xs" id="searchNodes" placeholder="Ex: THR2, THR, PHE, PHE10">
+            <span class="input-group-addon"><i></i></span>
+            <span class="input-group-btn">
+              <button class="btn btn-success btn-sm" id="searchNodesBtn" type="button">Search</button>
+            </span>
+            <span class="input-group-btn">
+              <button class="btn btn-danger btn-sm" id="clearSearchBtn" type="button">Clear</button>
+            </span>
+          </div>
+
+          <div class="page-header">
+            <h3> Search by residue type </h3>
+          </div>
+
+          <div class="btn-group multiselect-div atom-select">
+            <button type="button" class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span class="multiselect-selected-text"> Select the residue types </span> <b class="caret"></b>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Acceptor">Acceptor</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Aromatic">Aromatic</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Donor">Donor</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrophobic">Hydrophobic</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Negative">Negative</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Positive">Positive</label></a></li>
+            </ul>
+          </div>
+
+          <script>
+          $('#clearSearchBtn').on("click", function() {
+            d3.selectAll(".nodes")
+            .style("fill",function(d) { return d.cinema_color })
+            .style("stroke",function(d) { return '#333' })
+            .style("stroke-width", "1.5px")
+            .style("opacity", 1);
+          });
+
+          $('#searchNodesBtn').on("click", function() {
+            var searchValue = $('#searchNodes').val().toUpperCase();
+
+            if (searchValue === "") return;
+
+            var filterColor = $('.input-color-picker').colorpicker('getValue');
+            var nodes = d3.selectAll(".nodes").style("opacity", .3);
+            d3.selectAll(".nodes").filter(function(d) {
+              var array = d.name;
+
+              if (array.indexOf(searchValue) > -1) {
+                return d;
+              }
+            }).style("fill",filterColor).style("stroke",'#333').style("stroke-width", "1.5px").style("opacity", 1);
+
+          });
+          </script>
+
+
+        </span>
+
       </div>
     </div>
-  </body>
-  </html>
+  </div>
+</body>
+</html>
