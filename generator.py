@@ -18,7 +18,7 @@ lesk = { "A": "#FF9640","G": "#FF9640","S": "#FF9640","T": "#FF9640","C": "#2699
 
 def indexinList(List, obj):
     for i in range(len(List)):
-        if List[i]['name'] == obj['name'] and List[i]['type'] == obj['type'] :
+        if List[i]['name'] == obj['name'] :
             index = i
             return index
             break
@@ -30,11 +30,6 @@ if  (len(params) > 1 and params[1] != ''):
     csvdf =  pd.read_csv(params[1],keep_default_na=False,na_values=[" "])
 else:
     csvdf =  pd.read_csv('teste.csv',keep_default_na=False,na_values=[" "])
-
-
-
-
-
 
 
 # Takes this string as example (ATOM_1_N_THR_2_A,) and got only the residue (THR2)
@@ -59,41 +54,43 @@ for index, row in csvdf.iterrows():
     if(row['interaction'] != ""):
         string = correctString(row['atom1'])
         string2 = correctString(row['atom2'])
-        obj = {}; obj2 ={}
-        obj['name'] = string
-        obj['type'] = row['type_atom1']
-        try:
-            obj['cinema_color'] = cinema.values()[cinema.keys().index(string[0])]
-        except Exception as e:
-            obj['cinema_color'] = "#ccc"
+        if (string != string2) :
 
-        try:
-            obj['clustal_color'] = clustal.values()[clustal.keys().index(string[0])]
-        except Exception as e:
-            obj['clustal_color'] = "#ccc"
+            obj = {}; obj2 ={}
+            obj['name'] = string
+            #obj['type'] = row['type_atom1']
+            try:
+                obj['cinema_color'] = cinema.values()[cinema.keys().index(string[0])]
+            except Exception as e:
+                obj['cinema_color'] = "#ccc"
 
-        try:
-            obj['lesk_color'] = lesk.values()[lesk.keys().index(string[0])]
-        except Exception as e:
-            obj['lesk_color'] = "#ccc"
+            try:
+                obj['clustal_color'] = clustal.values()[clustal.keys().index(string[0])]
+            except Exception as e:
+                obj['clustal_color'] = "#ccc"
 
-        nodes.append(obj)
-        try:
-            obj2['cinema_color'] = cinema.values()[cinema.keys().index(string2[0])]
-        except Exception as e:
-            obj2['cinema_color'] = "#ccc"
-        try:
-            obj2['clustal_color'] = clustal.values()[clustal.keys().index(string2[0])]
-        except Exception as e:
-            obj2['clustal_color'] = "#ccc"
-        try:
-            obj2['lesk_color'] = lesk.values()[lesk.keys().index(string2[0])]
-        except Exception as e:
-            obj2['lesk_color'] = "#ccc"
+            try:
+                obj['lesk_color'] = lesk.values()[lesk.keys().index(string[0])]
+            except Exception as e:
+                obj['lesk_color'] = "#ccc"
 
-        obj2['type'] = row['type_atom2']
-        obj2['name'] = string2
-        nodes.append(obj2)
+            nodes.append(obj)
+            try:
+                obj2['cinema_color'] = cinema.values()[cinema.keys().index(string2[0])]
+            except Exception as e:
+                obj2['cinema_color'] = "#ccc"
+            try:
+                obj2['clustal_color'] = clustal.values()[clustal.keys().index(string2[0])]
+            except Exception as e:
+                obj2['clustal_color'] = "#ccc"
+            try:
+                obj2['lesk_color'] = lesk.values()[lesk.keys().index(string2[0])]
+            except Exception as e:
+                obj2['lesk_color'] = "#ccc"
+
+            #obj2['type'] = row['type_atom2']
+            obj2['name'] = string2
+            nodes.append(obj2)
 
 # Get only the unique nodes
 nodes =  np.unique(nodes)
@@ -101,20 +98,21 @@ nodes =  np.unique(nodes)
 for index, row in csvdf.iterrows():
     if(row['interaction'] != ""):
         link = {};obj1 = {};obj2 = {};
-        obj1['name'] = correctString(row['atom1'])
-        obj1['type'] = row['type_atom1']
-        obj2['name'] = correctString(row['atom2'])
-        obj2['type'] = row['type_atom2']
-        #index1 = nodes.tolist().index(obj1)
-        index1 = indexinList(nodes.tolist(),obj1)
-        index2 = indexinList(nodes.tolist(),obj2)
-        link["source"] = index1
-        link["target"] = index2
-        link["distance"] = row['distance']
-        link["value"] = round(row['distance'])
-        link["type"] = row['interaction']
-        link["color"] = interColor.values()[interColor.keys().index(row['interaction'].strip())]
-        links.append(link)
+        if (correctString(row['atom1']) != correctString(row['atom2'])):
+            obj1['name'] = correctString(row['atom1'])
+            obj1['type'] = row['type_atom1']
+            obj2['name'] = correctString(row['atom2'])
+            obj2['type'] = row['type_atom2']
+            #index1 = nodes.tolist().index(obj1)
+            index1 = indexinList(nodes.tolist(),obj1)
+            index2 = indexinList(nodes.tolist(),obj2)
+            link["source"] = index1
+            link["target"] = index2
+            link["distance"] = row['distance']
+            link["value"] = round(row['distance'])
+            link["type"] = row['interaction']
+            link["color"] = interColor.values()[interColor.keys().index(row['interaction'].strip())]
+            links.append(link)
 
 # Get only the unique links
 links =  np.unique(links)

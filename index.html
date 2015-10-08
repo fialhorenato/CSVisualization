@@ -6,7 +6,7 @@
   <script src="js/d3.min.js" charset="utf-8"></script>
   <script src="js/bootstrap.min.js" charset="utf-8"></script>
   <script src="js/index.js" charset="utf-8"></script>
-  <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+  <!-- <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> -->
   <script src="js/bootstrap-colorpicker.min.js" charset="utf-8"></script>
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/bootstrap-colorpicker.min.css">
@@ -133,8 +133,7 @@
       .attr('class', 'd3-tip atom-tip')
       .offset([-10, 0])
       .html(function(d) {
-        var html = "<strong>Residue name:</strong> <span style='color:white'>" + d.name + "</span><br><br>"
-        + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
+        var html = "<strong>Residue name:</strong> <span style='color:white'>" + d.name + "</span><br><br>";
         return html;
       });
 
@@ -146,7 +145,7 @@
       .attr('class', 'd3-tip')
       .offset([-10, 0])
       .html(function(d) {
-        return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + "/" + d.source.type + " - " + d.target.name + "/" + d.target.type +  "</span><br><br>"
+        return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + " - " + d.target.name +  "</span><br><br>"
         + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
         + "<strong>Distance:</strong> <span style='color:white'>" + d.distance + "</span><br><br>"
 
@@ -169,13 +168,14 @@
 
 
 
-   force.linkDistance(function(d) { return  d.distance + 60; });
+      force.linkDistance(function(d) { return  d.distance + 60; });
 
 
 
       var svg = d3.select("#grafo").append("svg:svg")
       .attr("width", w)
       .attr("height", h)
+      .attr("class", "col-md-12")
       .call(d3.behavior.zoom().on("zoom", function () {
         svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")}))
         .append("g")
@@ -305,7 +305,13 @@
         var nodes = d3.selectAll(".nodes").style("opacity", .3);
 
         nodes.filter( function(d) {
-          var types = d.type.split("/");
+          if ($("#datebox").val() == "CINEMA") {
+            var types = d.cinema_color.split("/");
+          } else if ($("#datebox").val() == "CLUSTAL") {
+            var types = d.clustal_color.split("/");
+          } else if ($("#datebox").val() == "LESK") {
+            var types = d.lesk_color.split("/");
+          }
           for (var i in types) {
             if ( $.inArray(types[i], graphSelections.atoms) !== -1 ) return 1;
           }
@@ -323,7 +329,7 @@
             }
           }
           return linkNotSelected;
-        }).style("opacity", 0.2);
+        }).style("opacity", .15);
 
         var nodesToResize = [];
 
@@ -429,56 +435,46 @@
         <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#512B8B"> Repulsive</p></br>
         <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#519136"> Salt bridge</p></br>
 
-        <div class="page-header">
-          <h1> Nodes </h1>
-        </div>
-        <h3> Cinema </h3>
+        <div class="col-md-12" id = "edges">
+          <div class="page-header">
+            <div class='page-header'>
+              <h1> Nodes </h1>
+            </div>
+            <h3> CINEMA </h3>
 
-        <div class="row">
-          <div class="col-md-6">
-            <h5 style="color:#1240AB"> Polar Positive </h5>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#1240AB"> H</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#1240AB"> K</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#1240AB"> R</p></br>
-          </div>
+            <div class='row'>
+              <div class='col-md-12'>
+                <h5 style='color:#1240AB'> Polar Positive </h5>
+                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> H,K,R</p></br>
+              </div>
 
-          <div class="col-md-6">
-            <h5 style="color:#BF3030"> Polar Negative </h5>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#BF3030"> D</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#BF3030"> E</p></br>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <h5 style="color:#9F3ED5"> Polar Neutral </h5>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> N</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> Q</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> S</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#9F3ED5"> T</p></br>
-          </div>
+              <div class='col-md-12'>
+                <h5 style='color:#BF3030'> Polar Negative </h5>
+                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>
+              </div>
+            </div>
+            <div class='row'>
+              <div class='col-md-12'>
+                <h5 style='color:#9F3ED5'> Polar Neutral </h5>
+                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#9F3ED5'> N,Q,S,T</p></br>
+              </div>
 
-          <div class="col-md-6">
-            <h5 style="color:#4EA429"> Non-Polar Aliphatic </h5>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> A</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> G</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> I</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> L</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> M</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#4EA429"> V</p></br>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <h5 style="color:#009999"> Non-Polar Rings </h5>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> F</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> P</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> W</p></br>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#009999"> Y</p></br>
-          </div>
+              <div class='col-md-12'>
+                <h5 style='color:#4EA429'> Non-Polar Aliphatic </h5>
+                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#4EA429'> A,G,I,L,M,V</p></br>
+              </div>
+            </div>
+            <div class='row'>
+              <div class='col-md-12'>
+                <h5 style='color:#009999'> Non-Polar Rings </h5>
+                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#009999'> F,P,W,Y</p></br>
+              </div>
 
-          <div class="col-md-6">
-            <h5 style="color:#FFAA00"> Cysteine </h5>
-            <p class="glyphicon glyphicon-certificate" aria-hidden="true" style="color:#FFAA00"> C</p></br>
+              <div class='col-md-12'>
+                <h5 style='color:#FFAA00'> Cysteine </h5>
+                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FFAA00'> C</p></br>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -514,29 +510,29 @@
           <div class="input-group input-color-picker">
             <input type="text" class="form-control input-xs" id="searchNodes" placeholder="Ex: THR2, THR, PHE, PHE10">
             <span class="input-group-addon"><i></i></span>
-            <span class="input-group-btn">
-              <button class="btn btn-success btn-sm" id="searchNodesBtn" type="button">Search</button>
-            </span>
-            <span class="input-group-btn">
-              <button class="btn btn-danger btn-sm" id="clearSearchBtn" type="button">Clear</button>
-            </span>
           </div>
+          <span class="input-group-btn">
+            <button class="btn btn-success btn-sm" id="searchNodesBtn" type="button">Search</button>
+          </span>
+          <span class="input-group-btn">
+            <button class="btn btn-danger btn-sm" id="clearSearchBtn" type="button">Clear</button>
+          </span>
 
           <div class="page-header">
-            <h3> Search by residue type </h3>
+            <h3> Filter by residue type </h3>
           </div>
 
           <div class="btn-group multiselect-div atom-select">
             <button type="button" class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
               <span class="multiselect-selected-text"> Select the residue types </span> <b class="caret"></b>
             </button>
-            <ul class="dropdown-menu">
-              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Acceptor">Acceptor</label></a></li>
-              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Aromatic">Aromatic</label></a></li>
-              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Donor">Donor</label></a></li>
-              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrophobic">Hydrophobic</label></a></li>
-              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Negative">Negative</label></a></li>
-              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Positive">Positive</label></a></li>
+            <ul class="dropdown-menu" id = "filterbyresidue">
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Polar Positive</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Polar Negative</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#9F3ED5'>Polar Neutral</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#4EA429'>Non-Polar Aliphatic</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#009999'>Non-Polar Rings</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FFAA00'>Cysteine</label></a></li>
             </ul>
           </div>
 
@@ -587,17 +583,146 @@
 
           $("#colorlist li").click(function(){
             var choice = $(this).text();
+            console.log($("#datebox").text());
 
             $('#datebox').val($(this).text());
 
+            console.log($("#datebox").val());
+
 
             if (choice == "CINEMA") {
+              var html = "<div class='page-header'>\
+              <h1> Nodes </h1>\
+              </div>\
+              <h3> CINEMA </h3>\
+              \
+              <div class='row'>\
+              <div class='col-md-12'>\
+              <h5 style='color:#1240AB'> Polar Positive </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> H,K,R</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#BF3030'> Polar Negative </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>\
+              </div>\
+              </div>\
+              <div class='row'>\
+              <div class='col-md-12'>\
+              <h5 style='color:#9F3ED5'> Polar Neutral </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#9F3ED5'> N,Q,S,T</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#4EA429'> Non-Polar Aliphatic </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#4EA429'> A,G,I,L,M,V</p></br>\
+              </div>\
+              </div>\
+              <div class='row'>\
+              <div class='col-md-12'>\
+              <h5 style='color:#009999'> Non-Polar Rings </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#009999'> F,P,W,Y</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#FFAA00'> Cysteine </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FFAA00'> C</p></br>\
+              </div>\
+              </div>\
+              " ;
+
+              var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Polar Positive</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Polar Negative</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#9F3ED5'>Polar Neutral</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#4EA429'>Non-Polar Aliphatic</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#009999'>Non-Polar Rings</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FFAA00'>Cysteine</label></a></li>\
+              ";
+              $('#filterbyresidue').html(filterhtml);
+              $('#edges').html(html);
               d3.selectAll(".nodes")
               .style("fill",function(d) { return d.cinema_color });
-            } else if (choice == "CLUSTAL") {
+            } else if(choice == "CLUSTAL") {
+              var html = "<div class='page-header'>\
+              <h1> Nodes </h1>\
+              </div>\
+              <h3> CLUSTAL </h3>\
+              \
+              <div class='row'>\
+              <div class='col-md-12'>\
+              <h5 style='color:#FF9640'> GPST </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FF9640'> G,P,S,T</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#BF3030'> HKR </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> H,K,R</p></br>\
+              </div>\
+              </div>\
+              <div class='row'>\
+              <div class='col-md-12'>\
+              <h5 style='color:#1240AB'> FWY </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> F,W,Y</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#008500'> ILMV </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#008500'> I,L,M,V</p></br>\
+              </div>\
+              " ;
+              $('#edges').html(html);
+
+              var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FF9640'>GPST</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>HKR</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>FWY</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#008500'>ILMV</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#ccc'>Others</label></a></li>\
+              ";
+              $('#filterbyresidue').html(filterhtml);
+
               d3.selectAll(".nodes")
               .style("fill",function(d) { return d.clustal_color });
             } else if (choice == "LESK") {
+              var html = "<div class='page-header'>\
+              <h1> Nodes </h1>\
+              </div>\
+              <h3> LESK </h3>\
+              \
+              <div class='row'>\
+              <div class='col-md-12'>\
+              <h5 style='color:#FF9640'> Small Nonpolar </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FF9640'> A,G,S,T</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#269926'> Hydrophobic </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#269926'> C,F,I,L,M,P,V,W,Y</p></br>\
+              </div>\
+              </div>\
+              <div class='row'>\
+              <div class='col-md-12'>\
+              <h5 style='color:#CD0077'> Polar </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#CD0077'> H,N,Q</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#BF3030'> Negatively Charged </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>\
+              </div>\
+              \
+              <div class='col-md-12'>\
+              <h5 style='color:#1240AB'> Positively Charged </h5>\
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> K,R</p></br>\
+              </div>\
+              " ;
+              $('#edges').html(html);
+
+              var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FF9640'>Small Nonpolar</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#269926'>Hydrophobic</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#CD0077'>Polar</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Negatively Charged</label></a></li>\
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Positively Charged</label></a></li>";
+              $('#filterbyresidue').html(filterhtml);
               d3.selectAll(".nodes")
               .style("fill",function(d) { return d.lesk_color });
             }
