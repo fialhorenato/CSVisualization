@@ -61,6 +61,7 @@ for index, row in csvdf.iterrows():
             obj = {}; obj2 ={}
             obj['name'] = string
             #obj['type'] = row['type_atom1']
+
             try:
                 obj['cinema_color'] = cinema.values()[cinema.keys().index(string[0])]
             except Exception as e:
@@ -99,6 +100,7 @@ for index, row in csvdf.iterrows():
 # Get only the unique nodes
 nodes =  np.unique(nodes)
 
+# Search how many of each node have
 for node in nodes:
     node['value'] = (nodesteste.count(node['name']))
 
@@ -111,7 +113,6 @@ for index, row in csvdf.iterrows():
             obj1['type'] = row['type_atom1']
             obj2['name'] = correctString(row['atom2'])
             obj2['type'] = row['type_atom2']
-            #index1 = nodes.tolist().index(obj1)
             index1 = indexinList(nodes.tolist(),obj1)
             index2 = indexinList(nodes.tolist(),obj2)
             link["source"] = index1
@@ -128,6 +129,7 @@ for index, row in csvdf.iterrows():
 # Get only the unique links
 links =  np.unique(links)
 
+# Search how many of each links have
 for link in links:
     srchobj = {}
     srchobj['source'] = link['source']
