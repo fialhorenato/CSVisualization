@@ -48,6 +48,8 @@ def getIndexOfNodes(l, index, value):
 # Creates 2 ndarrays to get the nodes and the links
 nodes = []
 links = []
+nodesteste = []
+linksteste = []
 
 # Iterate on the dataframe got from the .csv file
 for index, row in csvdf.iterrows():
@@ -91,13 +93,19 @@ for index, row in csvdf.iterrows():
             #obj2['type'] = row['type_atom2']
             obj2['name'] = string2
             nodes.append(obj2)
+            nodesteste.append(string)
+            nodesteste.append(string2)
 
 # Get only the unique nodes
 nodes =  np.unique(nodes)
+
+for node in nodes:
+    node['value'] = (nodesteste.count(node['name']))
+
 # Get the correct links with the index after the pre-processing
 for index, row in csvdf.iterrows():
     if(row['interaction'] != ""):
-        link = {};obj1 = {};obj2 = {};
+        link = {};obj1 = {};obj2 = {};srcobj={};
         if (correctString(row['atom1']) != correctString(row['atom2'])):
             obj1['name'] = correctString(row['atom1'])
             obj1['type'] = row['type_atom1']
@@ -109,13 +117,22 @@ for index, row in csvdf.iterrows():
             link["source"] = index1
             link["target"] = index2
             link["distance"] = row['distance']
-            link["value"] = round(row['distance'])
             link["type"] = row['interaction']
             link["color"] = interColor.values()[interColor.keys().index(row['interaction'].strip())]
             links.append(link)
+            srcobj['source'] = index1
+            srcobj['target'] = index2
+            linksteste.append(srcobj)
+
 
 # Get only the unique links
 links =  np.unique(links)
+
+for link in links:
+    srchobj = {}
+    srchobj['source'] = link['source']
+    srchobj['target'] = link['target']
+    link['value'] = (linksteste.count(srchobj))
 
 linksdf = pd.DataFrame.from_dict(links, orient='columns')
 nodesdf = pd.DataFrame.from_dict(nodes, orient='columns')
