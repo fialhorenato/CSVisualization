@@ -256,7 +256,7 @@
           path.attr("d", function(d) {
             var dx = d.target.x - d.source.x,
             dy = d.target.y - d.source.y,
-            dr = 0/d.linknum;  //linknum is defined above
+            dr = 10/d.linknum;  //linknum is defined above
             return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
           });
 
@@ -288,8 +288,8 @@
         });
 
         var text;
-        if (selections.length === 0) text = ( multiselect.hasClass("atom-select") ) ? "Any selected type" : "Any selected interaction";
-        else if (selections.length > 0 && selections.length <= 1) text = selections.join(", ");
+        if (selections.length === 0) text = ( multiselect.hasClass("atom-select") ) ? "Select the types" : "Select the interactions";
+        else if (selections.length > 0 && selections.length <= 1)  text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected type" : selections.length + " selected interaction";
         else text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected types" : selections.length + " selected interactions";
         multiselect.find('.multiselect-selected-text').text(text);
 
@@ -505,7 +505,7 @@
         </div>
         <div class="panel-body">
           <div class="btn-group multiselect-div inter-select">
-            <button type="button" class="btn btn-default btn-md dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
               <span class="multiselect-selected-text">Select the interactions</span> <span class="caret"></b>
               </button>
               <ul class="dropdown-menu">
@@ -537,7 +537,7 @@
           </div>
           <div class="panel-body">
             <div class="btn-group multiselect-div atom-select">
-              <button type="button" class="btn btn-default btn-md dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                 <span class="multiselect-selected-text"> Select the residue types </span> <b class="caret"></b>
               </button>
               <ul class="dropdown-menu" id = "filterbyresidue">
