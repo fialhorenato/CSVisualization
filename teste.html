@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Clustered Network</title>
-    <script src="http://d3js.org/d3.v2.js"></script>
+    <script src="js/d3.min.js"></script>
 
     <style type="text/css">
 svg {
@@ -54,8 +54,8 @@ line.link {
   </head>
   <body>
     <script type="text/javascript">
-var width = 2000,        // svg width
-    height = 1050,       // svg height
+var width = 1080,        // svg width
+    height = 800,       // svg height
     dr = 4,             // default point radius
     off = 15,           // cluster hull offset
     expand = {},        // expanded clusters
@@ -523,7 +523,7 @@ function init() {
         .attr("x2", function(d) { return d.target.x; })
         .attr("y2", function(d) { return d.target.y; });
     // both existing and enter()ed links may have changed stroke width due to expand state change somewhere:
-    link.style("stroke-width", function(d) { return d.size || 1; });
+    link.style("stroke-width", function(d) { return d.size/100 || 1; });
   }
 
   hlink = helper_linkg.selectAll("path.hlink").data(net.helper_render_links, function(d) {
@@ -533,7 +533,7 @@ function init() {
   hlink.enter().append("path")
       .attr("class", "hlink");
   // both existing and enter()ed links may have changed stroke width due to expand state change somewhere:
-  hlink.style("stroke-width", function(d) { return d.size || 1; });
+  hlink.style("stroke-width", function(d) { return d.size/10 || 1; });
 
   if (debug) {
     hnode = helper_nodeg.selectAll("circle.node").data(net.helper_nodes, function(d) {
@@ -563,7 +563,7 @@ function init() {
         return "node" + (d.size > 0 ? d.expansion ? " link-expanded" : "" : " leaf");
       })
       .attr("r", function(d) {
-        return d.size > 0 ? d.size + dr : dr + 1;
+        return d.size > 0 ? d.size/3 + dr : dr + 1;
       })
       .attr("cx", function(d) { return d.x; })
       .attr("cy", function(d) { return d.y; })
