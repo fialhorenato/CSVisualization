@@ -1,759 +1,830 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
+    <title>Clustered Network</title>
+    <script src="js/jquery2.js" charset="utf-8"></script>
+    <script src="js/d3.min.js" charset="utf-8"></script>
+    <script src="js/bootstrap.min.js" charset="utf-8"></script>
+    <script src="js/index.js" charset="utf-8"></script>
+    <script src="js/3Dmol-nojquery-min.js"></script>
+    <script src="js/bootstrap-colorpicker.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-colorpicker.min.css">
 
-  <script src="js/jquery2.js" charset="utf-8"></script>
-  <script src="js/d3.min.js" charset="utf-8"></script>
-  <script src="js/bootstrap.min.js" charset="utf-8"></script>
-  <script src="js/index.js" charset="utf-8"></script>
-  <script src="js/3Dmol-nojquery-min.js"></script>
-  <script src="js/bootstrap-colorpicker.min.js" charset="utf-8"></script>
-  <link rel="stylesheet" href="css/bootstrap.min.css">
-  <link rel="stylesheet" href="css/bootstrap-colorpicker.min.css">
+    <style type="text/css">
+svg {
+  border: 1px solid #ccc;
+}
+body {
+  font: 10px sans-serif;
+}
+circle.node {
+  stroke: #555;
+  stroke-width: 1px;
+}
+circle.leaf {
+  stroke: #fff;
+  stroke-width: 1px;
+}
+path.hull {
+  fill-opacity: 0.3;
+}
+line.link {
+  stroke: #ccc;
+  stroke-opacity: 1;
+  pointer-events: none;
+}
 
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #7CDBAE;
+  border-radius: 2px;
+  z-index: 2;
+  max-width: 40%;
+}
 
-  <style>
-  path.link {
-    fill: none;
-    stroke: #666;
-    stroke-width: 1.5px;
-  }
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8)
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
 
-  marker#licensing {
-    fill: green;
-  }
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+    </style>
+  </head>
+  <body>
 
-  path.link.licensing {
-    stroke: green;
-  }
-
-  path.link.resolved {
-    stroke-dasharray: 0,2 1;
-  }
-
-  circle {
-    /** fill: #ccc; **/
-    stroke: #333;
-    stroke-width: 1.5px;
-  }
-
-  text {
-    font: 10px sans-serif;
-    pointer-events: none;
-  }
-
-  text.shadow {
-    stroke: #fff;
-    stroke-width: 3px;
-    stroke-opacity: .8;
-  }
-
-  .d3-tip {
-    line-height: 1;
-    font-weight: bold;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.8);
-    color: #7CDBAE;
-    border-radius: 2px;
-    z-index: 2;
-    max-width: 40%;
-  }
-
-  /* Creates a small triangle extender for the tooltip */
-  .d3-tip:after {
-    box-sizing: border-box;
-    display: inline;
-    font-size: 10px;
-    width: 100%;
-    line-height: 1;
-    color: rgba(0, 0, 0, 0.8)
-    content: "\25BC";
-    position: absolute;
-    text-align: center;
-  }
-
-  /* Style northward tooltips differently */
-  .d3-tip.n:after {
-    margin: -1px 0 0 0;
-    top: 100%;
-    left: 0;
-  }
-
-  </style>
-</head>
-<body>
-
-  <script type="text/javascript">
+    <nav class="navbar navbar-inverse">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">
+            LIGANDS
+          </a>
+        </div>
 
 
+      </div>
+    </div>
+  </nav>
 
-  var links = [], nodes = [];
 
-  d3.json("graph.json", function(error, data) {
+  <div class="col-md-2 col-md-offset-1">
+    <div class="page-header">
+      <h3> Labels </h3>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Edges</h3>
+      </div>
+      <div class="panel-body">
+        <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#E36262"> Aromatic stacking</p></br>
+        <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#02B7DB"> Hydrogen bond</p></br>
+        <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#F0ED67"> Hydrophobic</p></br>
+        <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#512B8B"> Repulsive</p></br>
+        <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#519136"> Salt bridge</p></br>
+      </div>
+
+      <div class="panel-heading">
+        <h3 class="panel-title" id="titulopanel">CINEMA</h3>
+      </div>
+      <div class="panel-body">
+        <div class="col-md-12" id = "edges">
+
+          <div class='row'>
+            <div class='col-md-12'>
+              <h5 style='color:#1240AB'> Polar Positive </h5>
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> H,K,R</p></br>
+            </div>
+
+            <div class='col-md-12'>
+              <h5 style='color:#BF3030'> Polar Negative </h5>
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>
+            </div>
+          </div>
+          <div class='row'>
+            <div class='col-md-12'>
+              <h5 style='color:#9F3ED5'> Polar Neutral </h5>
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#9F3ED5'> N,Q,S,T</p></br>
+            </div>
+
+            <div class='col-md-12'>
+              <h5 style='color:#4EA429'> Non-Polar Aliphatic </h5>
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#4EA429'> A,G,I,L,M,V</p></br>
+            </div>
+          </div>
+          <div class='row'>
+            <div class='col-md-12'>
+              <h5 style='color:#009999'> Non-Polar Rings </h5>
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#009999'> F,P,W,Y</p></br>
+            </div>
+
+            <div class='col-md-12'>
+              <h5 style='color:#FFAA00'> Cysteine </h5>
+              <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FFAA00'> C</p></br>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 
-    for (item in data.links) {
-      links.push(data.links[item]);
-    }
+  </div>
+  <div class="col-md-6" id="grafo" align="center">
+    <div class="page-header">
+      <h3> Grafo </h3>
+    </div>
+  </div>
+  <div class="col-md-2  ">
+    <div class="page-header">
+      <h3> Filtros </h3>
+    </div>
 
-    for (item in data.nodes) {
-      nodes.push(data.nodes[item]);
-    }
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Filter by link type</h3>
+      </div>
+      <div class="panel-body">
+        <div class="btn-group multiselect-div inter-select">
+          <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            <span class="multiselect-selected-text">Select the interactions</span> <span class="caret"></b>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Aromatic stacking">Aromatic stacking</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrogen bond">Hydrogen bond</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrophobic">Hydrophobic</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Repulsive">Repulsive</label></a></li>
+              <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Salt bridge">Salt bridge</label></a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel-heading">
+          <h3 class="panel-title">Search by residue name</h3>
+        </div>
+        <div class="panel-body">
+          <div class="input-group input-color-picker">
+            <input type="text" class="form-control input-sm" id="searchNodes" placeholder="Ex: THR2, THR, PHE, PHE10">
+            <span class="input-group-addon"><i></i></span>
+          </div>
 
-    //sort links by source, then target
-    links.sort(function(a,b) {
-      if (a.source > b.source) {return 1;}
-      else if (a.source < b.source) {return -1;}
-      else {
-        if (a.target > b.target) {return 1;}
-        if (a.target < b.target) {return -1;}
-        else {return 0;}
+          <div class="btn-group" role="group" aria-label="...">
+            <button type="button" class="btn btn-success btn-xs" id="searchNodesBtn"><span class="glyphicon glyphicon-search" aria-hidden="true"></span> Search</button>
+            <button type="button" class="btn btn-danger btn-xs" id="clearSearchBtn"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Clear</button>
+          </div>
+        </div>
+
+        <div class="panel-heading">
+          <h3 class="panel-title">Filter by residue type</h3>
+        </div>
+        <div class="panel-body">
+          <div class="btn-group multiselect-div atom-select">
+            <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span class="multiselect-selected-text"> Select the residue types </span> <b class="caret"></b>
+            </button>
+            <ul class="dropdown-menu" id = "filterbyresidue">
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Polar Positive</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Polar Negative</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#9F3ED5'>Polar Neutral</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#4EA429'>Non-Polar Aliphatic</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#009999'>Non-Polar Rings</label></a></li>
+              <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FFAA00'>Cysteine</label></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel-heading">
+          <h3 class="panel-title">Change color pattern</h3>
+        </div>
+
+        <div class = "panel-body">
+          <div class="input-group">
+            <input type="TextBox" ID="datebox" Class="form-control" value = "CINEMA"></input>
+            <div class="input-group-btn">
+              <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                <span class="caret"></span>
+              </button>
+              <ul id="colorlist" class="dropdown-menu">
+                <li><a href="#">CINEMA</a></li>
+                <li><a href="#">CLUSTAL</a></li>
+                <li><a href="#">LESK</a></li>
+              </ul>
+            </div>
+          </div>
+
+
+        </div>
+
+        <div class="panel-heading">
+          <h3 class="panel-title">3DMol</h3>
+        </div>
+        <div class = "panel-body">
+          <div style="height: 200px; width: 200px; position: relative;" class='col-md-12 viewer_3Dmoljs' data-pdb='1BGA' data-backgroundcolor='0xffffff' data-style='stick'></div>
+        </div>
+      </div>
+
+
+
+
+
+    <script type="text/javascript">
+
+    $(function(){
+      $('.input-color-picker').colorpicker( { input: '' }).colorpicker('setValue', "blue");
+    });
+
+var width = 800,     // svg width
+    height = 600,     // svg height
+    dr = 4,      // default point radius
+    off = 15,    // cluster hull offset
+    expand = {}, // expanded clusters
+    data, net, force, hullg, hull, linkg, link, nodeg, node;
+
+var curve = d3.svg.line()
+    .interpolate("cardinal-closed")
+    .tension(.85);
+
+//var fill = d3.scale.category20();
+
+function noop() { return false; }
+
+function nodeid(n) {
+  return n.size ? "_g_"+n.group : n.name;
+}
+
+function linkid(l) {
+  var u = nodeid(l.source),
+      v = nodeid(l.target);
+  return u<v ? u+"|"+v : v+"|"+u;
+}
+
+function getGroup(n) { return n.group; }
+
+// constructs the network to visualize
+function network(data, prev, index, expand) {
+  expand = expand || {};
+  var gm = {},    // group map
+      nm = {},    // node map
+      lm = {},    // link map
+      gn = {},    // previous group nodes
+      gc = {},    // previous group centroids
+      nodes = [], // output nodes
+      links = []; // output links
+
+  // process previous nodes for reuse or centroid calculation
+  if (prev) {
+    prev.nodes.forEach(function(n) {
+      var i = index(n), o;
+      if (n.size > 0) {
+        gn[i] = n;
+        n.size = 0;
+      } else {
+        o = gc[i] || (gc[i] = {x:0,y:0,count:0});
+        o.x += n.x;
+        o.y += n.y;
+        o.count += 1;
       }
     });
-    //any links with duplicate source and target get an incremented 'linknum'
-    for (var i=0; i<links.length; i++) {
-      if (i != 0 &&
-        links[i].source == links[i-1].source &&
-        links[i].target == links[i-1].target) {
-          links[i].linknum = links[i-1].linknum + 1;
+  }
+
+  // determine nodes
+  for (var k=0; k<data.nodes.length; ++k) {
+    var n = data.nodes[k],
+        i = index(n),
+        l = gm[i] || (gm[i]=gn[i]) || (gm[i]={group:i, size:0, nodes:[]});
+    if (expand[i]) {
+      // the node should be directly visible
+      nm[n.name] = nodes.length;
+      nodes.push(n);
+      if (gn[i]) {
+        // place new nodes at cluster location (plus jitter)
+        n.x = gn[i].x + Math.random();
+        n.y = gn[i].y + Math.random();
+      }
+    } else {
+      // the node is part of a collapsed cluster
+      if (l.size == 0) {
+        string = n.name.split("_");
+        l.name = string[3];
+
+        l.cinema_color = n.cinema;
+        l.clustal_color = n.clustal;
+        l.lesk_color = n.lesk;
+        nm[i] = nodes.length;
+        nodes.push(l);
+        if (gc[i]) {
+          l.x = gc[i].x / gc[i].count;
+          l.y = gc[i].y / gc[i].count;
         }
-        else {links[i].linknum = 1;};
-      };
+      }
+      n.cinema_color = n.cinema;
+      n.clustal_color = n.clustal;
+      n.lesk_color = n.lesk;
+      l.nodes.push(n);
+    }
+  // always count group size as we also use it to tweak the force graph strengths/distances
+    l.size += 1;
+  n.group_data = l;
+  }
+
+  for (i in gm) { gm[i].link_count = 0; }
+
+  // determine links
+  for (k=0; k<data.links.length; ++k) {
+    var e = data.links[k],
+        u = index(e.source),
+        v = index(e.target);
+  if (u != v) {
+    gm[u].link_count++;
+    gm[v].link_count++;
+  }
+    u = expand[u] ? nm[e.source.name] : nm[u];
+    v = expand[v] ? nm[e.target.name] : nm[v];
+    var i = (u<v ? u+"|"+v : v+"|"+u),
+        l = lm[i] || (lm[i] = {source:u, target:v, size:0});
+    l.size += 1;
+    lm[i].color = e.color;
+    lm[i].type = e.type;
+  }
+  for (i in lm) { links.push(lm[i]); }
+
+  return {nodes: nodes, links: links};
+}
+
+function convexHulls(nodes, index, offset) {
+  var hulls = {};
+  var colors = [];
+  for (var k=0; k<nodes.length; ++k) {
+    var n = nodes[k];
+
+    if (n.size) continue;
+    var i = index(n), l = hulls[i] || (hulls[i] = []);
+    l.push([n.x-offset, n.y-offset]);
+    l.push([n.x-offset, n.y+offset]);
+    l.push([n.x+offset, n.y-offset]);
+    l.push([n.x+offset, n.y+offset]);
+    hulls[i].cinema_color = n.cinema_color;
+    hulls[i].clustal_color = n.clustal_color;
+    hulls[i].lesk_color = n.lesk_color;
+  }
 
 
+  // create convex hulls
+  var hullset = [];
+  for (i in hulls) {
+    hullset.push({clustal_color : hulls[i].clustal_color,lesk_color : hulls[i].lesk_color,cinema_color : hulls[i].cinema_color, group: i, path: d3.geom.hull(hulls[i])});
+  }
 
-      // Compute the distinct nodes from the links.
-      links.forEach(function(link) {
-        link.source = nodes[link.source] || (nodes[link.source] = {name: link.source});
-        link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
-      });
+  return hullset;
+}
+
+function drawCluster(d) {
+  return curve(d.path); // 0.8
+}
+
+// --------------------------------------------------------
+
+var nodetip = d3.tip()
+.attr('class', 'd3-tip atom-tip')
+.offset([-10, 0])
+.html(function(d) {
+  var html = "<strong>Name:</strong> <span style='color:white'>" + d.name + "</span><br><br>"
+  return html;
+});
+
+var linktip = d3.tip()
+.attr('class', 'd3-tip')
+.offset([-10, 0])
+.html(function(d) {
+  return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + " - " + d.target.name +  "</span><br><br>"
+  + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
+});
+
+var body = d3.select("#grafo");
+
+var vis = body.append("svg")
+   .attr("width", width)
+   .attr("height", height)
+   .call(d3.behavior.zoom().on("zoom", function () {
+     vis.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")}))
+     .append("g")
+     .call(nodetip)
+     .call(linktip);
+
+d3.json("graph2.json", function(json) {
+  data = json;
+  for (var i=0; i<data.links.length; ++i) {
+    o = data.links[i];
+    o.source = data.nodes[o.source];
+    o.target = data.nodes[o.target];
+  }
+
+  hullg = vis.append("g");
+  linkg = vis.append("g");
+  nodeg = vis.append("g");
+
+  init();
+
+  vis.attr("opacity", 1e-6)
+    .transition()
+      .duration(1000)
+      .attr("opacity", 1);
+});
+
+function init() {
 
 
-      var nodetip = d3.tip()
-      .attr('class', 'd3-tip atom-tip')
-      .offset([-10, 0])
-      .html(function(d) {
-        var html = "<strong>Residue name:</strong> <span style='color:white'>" + d.name + "</span><br><br>"
-        + "<strong>Number of nodes:</strong> <span style='color:white'>" + d.value + "</span><br><br>"
-        return html;
-      });
+  if (force) force.stop();
 
+  net = network(data, net, getGroup, expand);
 
-      /* Initialize tooltip */
-      //nodetip = d3.tip().html(function(d) { return d.name; });
-
-      var linktip = d3.tip()
-      .attr('class', 'd3-tip')
-      .offset([-10, 0])
-      .html(function(d) {
-        return "<strong>Edge: </strong> <span style='color:white'>" + d.source.name + " - " + d.target.name +  "</span><br><br>"
-        + "<strong>Type:</strong> <span style='color:white'>" + d.type + "</span><br><br>"
-        + "<strong>Distance:</strong> <span style='color:white'>" + d.distance + "</span><br><br>"
-        + "<strong>Number of links:</strong> <span style='color:white'>" + d.value + "</span><br><br>"
-
-
-      });
-
-
-
-
-      var w = 800,
-      h = 600;
-
-      var force = d3.layout.force()
-      .nodes(d3.values(nodes))
-      .links(links)
-      .size([w, h])
-      .linkDistance(function(d) { return  (d.distance * 30); })
-      .charge(-500)
-      .on("tick", tick)
+  force = d3.layout.force()
+      .nodes(net.nodes)
+      .links(net.links)
+      .size([width, height])
+      .linkDistance(function(l, i) {
+      var n1 = l.source, n2 = l.target;
+    // larger distance for bigger groups:
+    // both between single nodes and _other_ groups (where size of own node group still counts),
+    // and between two group nodes.
+    //
+    // reduce distance for groups with very few outer links,
+    // again both in expanded and grouped form, i.e. between individual nodes of a group and
+    // nodes of another group or other group node or between two group nodes.
+    //
+    // The latter was done to keep the single-link groups ('blue', rose, ...) close.
+    return 30 +
+      Math.min(20 * Math.min((n1.size || (n1.group != n2.group ? n1.group_data.size : 0)),
+                             (n2.size || (n1.group != n2.group ? n2.group_data.size : 0))),
+           -30 +
+           30 * Math.min((n1.link_count || (n1.group != n2.group ? n1.group_data.link_count : 0)),
+                         (n2.link_count || (n1.group != n2.group ? n2.group_data.link_count : 0))),
+           100);
+      //return 150;
+    })
+    .linkStrength(function(l, i) {
+    return 1;
+    })
+    .gravity(0)   // gravity+charge tweaked to ensure good 'grouped' view (e.g. green group not smack between blue&orange, ...
+    .charge(-1000)    // ... charge is important to turn single-linked groups to the outside
+    .friction(0.5)   // friction adjusted to get dampened display: less bouncy bouncy ball [Swedish Chef, anyone?]
       .start();
 
 
 
-      force.linkDistance(function(d) { return  d.distance + 60; });
+  hullg.selectAll("path.hull").remove();
+  hull = hullg.selectAll("path.hull")
+      .data(convexHulls(net.nodes, getGroup, off))
+    .enter().append("path")
+      .attr("class", "hull")
+      .attr("d", drawCluster)
+      .style("fill", function(d) {return d.clustal_color; })
+      .on("click", function(d) {
+      expand[d.group] = false; init();
+      });
+
+  link = linkg.selectAll("line.link").data(net.links, linkid);
+  link.exit().remove();
+  link.enter().append("line")
+      .attr("class", "link")
+      .attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; })
+      .style("stroke-width", function(d) { return d.size || 1; })
+      .style("stroke", function(d) {return d.color; })
+      .on('mouseover', linktip.show)
+      .on('mouseout', linktip.hide);
 
 
 
-      var svg = d3.select("#grafo").append("svg:svg")
-      .attr("width", w)
-      .attr("height", h)
-      .attr("class", "col-md-12")
-      .call(d3.behavior.zoom().on("zoom", function () {
-        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")}))
-        .append("g")
-        .call(nodetip)
-        .call(linktip);
+      vis.append("svg:g").selectAll("line")
+      .on('mouseover', linktip.show)
+      .on('mouseout', linktip.hide);
+
+  node = nodeg.selectAll("circle.node").data(net.nodes, nodeid);
+  node.exit().remove();
 
 
 
-        // Per-type markers, as they don't inherit styles.
-        svg.append("svg:defs").selectAll("marker")
-        .data(["end"])      // Different link/path types can be defined here
-        .enter().append("svg:marker")    // This section adds in the arrows
-        .attr("id", String)
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", 15)
-        .attr("refY", -1.5)
-        .attr("markerWidth", 6)
-        .attr("markerHeight", 6)
-        .attr("orient", "auto")
-        .append("svg:path")
-        .attr("d", "M0,-5L10,0L0,5");
+  node.enter().append("circle")
+      .attr("class", function(d) { return "node" + (d.size?"":" leaf"); })
+      .attr("r", function(d) { return d.size / 20 ? (d.size + dr) / 2 : dr+1; })
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+      .style("fill", function(d) {return d.clustal_color ; })
+      .on('mouseover', nodetip.show)
+      .on('mouseout', nodetip.hide)
+      .on("click", function(d) {
+      expand[d.group] = !expand[d.group];
+      init();
+      });
+
+  node.call(force.drag);
+
+  force.on("tick", function() {
+    if (!hull.empty()) {
+      hull.data(convexHulls(net.nodes, getGroup, off))
+          .attr("d", drawCluster);
+    }
+
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; })
 
 
-        var path = svg.append("svg:g").selectAll("path")
-        .data(force.links())
-        .enter().append("svg:path")
-        .attr("class", "link")
-        //.attr("marker-end", "url(#end)")
-        //.attr("marker-start", "url(#end")
-        .style("stroke", function(d) {return d.color;})
-        .style("stroke-width", function(d) {return d.value/8;})
-        .on('mouseover', linktip.show)
-        .on('mouseout', linktip.hide);
-
-        var circle = svg.append("svg:g").selectAll("circle")
-        .data(force.nodes())
-        .enter().append("svg:circle")
-        .attr("class","nodes")
-        .attr("r", function(d){return d.value / 8})
-        .attr("fill", function(d) { return d.cinema_color })
-        .call(force.drag)
-        .on('mouseover', nodetip.show)
-        .on('mouseout', nodetip.hide);
+    node.attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
 
 
-        circle.selectAll('rect')
-        .data(data)
-        .enter().append('rect')
-        .attr('width', function() { return x.rangeBand() })
-        .attr('height', function(d) { return h - y(d) })
-        .attr('y', function(d) { return y(d) })
-        .attr('x', function(d, i) { return x(i) })
-        /* Show and hide tip on mouse events */
+  });
 
-        /**
-        var text = svg.append("svg:g").selectAll("g")
-        .data(force.nodes())
-        .enter().append("svg:g");
+  if ($('#datebox').val() == "CINEMA") {
+    d3.selectAll("circle")
+    .style("fill", function(d) {return d.cinema_color});
 
-        // A copy of the text with a thick white stroke for legibility.
-        text.append("svg:text")
-        .attr("x", 8)
-        .attr("y", ".31em")
-        .attr("class", "shadow")
-        .text(function(d) { return d.name; });
+    d3.selectAll(".hull")
+    .style("fill",function(d) {return d.cinema_color });
+  }
 
-        text.append("svg:text")
-        .attr("x", 8)
-        .attr("y", ".31em")
-        .text(function(d) { return d.name; });
-        **/
+  if($('#datebox').val() == "CLUSTAL") {
+    d3.selectAll("circle")
+    .style("fill", function(d) {return d.clustal_color});
 
-        // Use elliptical arc path segments to doubly-encode directionality.
-        function tick() {
-          path.attr("d", function(d) {
-            var dx = d.target.x - d.source.x,
-            dy = d.target.y - d.source.y,
-            dr = 10/d.linknum;  //linknum is defined above
-            return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
-          });
+    d3.selectAll(".hull")
+    .style("fill",function(d) {return d.clustal_color });
+  }
 
-          circle.attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y + ")";
-          });
+  if ($('#datebox').val() == "LESK") {
+    d3.selectAll("circle")
+    .style("fill", function(d) {return d.lesk_color});
 
-          //text.attr("transform", function(d) {
-          //  return "translate(" + d.x + "," + d.y + ")";
-          //});
+    d3.selectAll(".hull")
+    .style("fill",function(d) {return d.lesk_color });
+  }
+}
+
+    </script>
+
+
+    <script>
+    $("#colorlist li").click(function(){
+      var choice = $(this).text();
+
+      $('#datebox').val($(this).text());
+      $('#titulopanel').text($(this).text());
+
+
+
+      if (choice == "CINEMA") {
+        var html = "\
+        <div class='row'>\
+        <div class='col-md-12'>\
+        <h5 style='color:#1240AB'> Polar Positive </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> H,K,R</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#BF3030'> Polar Negative </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>\
+        </div>\
+        </div>\
+        <div class='row'>\
+        <div class='col-md-12'>\
+        <h5 style='color:#9F3ED5'> Polar Neutral </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#9F3ED5'> N,Q,S,T</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#4EA429'> Non-Polar Aliphatic </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#4EA429'> A,G,I,L,M,V</p></br>\
+        </div>\
+        </div>\
+        <div class='row'>\
+        <div class='col-md-12'>\
+        <h5 style='color:#009999'> Non-Polar Rings </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#009999'> F,P,W,Y</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#FFAA00'> Cysteine </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FFAA00'> C</p></br>\
+        </div>\
+        </div>\
+        " ;
+
+        var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Polar Positive</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Polar Negative</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#9F3ED5'>Polar Neutral</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#4EA429'>Non-Polar Aliphatic</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#009999'>Non-Polar Rings</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FFAA00'>Cysteine</label></a></li>\
+        ";
+        $('#filterbyresidue').html(filterhtml);
+        $('#edges').html(html);
+        d3.selectAll("circle")
+        .style("fill",function(d) {return d.cinema_color });
+
+        d3.selectAll(".hull")
+        .style("fill",function(d) {return d.cinema_color });
+      } else if(choice == "CLUSTAL") {
+        var html = "\
+        <div class='row'>\
+        <div class='col-md-12'>\
+        <h5 style='color:#FF9640'> GPST </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FF9640'> G,P,S,T</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#BF3030'> HKR </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> H,K,R</p></br>\
+        </div>\
+        </div>\
+        <div class='row'>\
+        <div class='col-md-12'>\
+        <h5 style='color:#1240AB'> FWY </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> F,W,Y</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#008500'> ILMV </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#008500'> I,L,M,V</p></br>\
+        </div>\
+        " ;
+        $('#edges').html(html);
+
+        var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FF9640'>GPST</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>HKR</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>FWY</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#008500'>ILMV</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#ccc'>Others</label></a></li>\
+        ";
+        $('#filterbyresidue').html(filterhtml);
+
+        d3.selectAll("circle")
+        .style("fill",function(d) { return d.clustal_color });
+
+        d3.selectAll(".hull")
+        .style("fill",function(d) { return d.clustal_color });
+      } else if (choice == "LESK") {
+        var html = "\
+        <div class='row'>\
+        <div class='col-md-12'>\
+        <h5 style='color:#FF9640'> Small Nonpolar </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FF9640'> A,G,S,T</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#269926'> Hydrophobic </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#269926'> C,F,I,L,M,P,V,W,Y</p></br>\
+        </div>\
+        </div>\
+        <div class='row'>\
+        <div class='col-md-12'>\
+        <h5 style='color:#CD0077'> Polar </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#CD0077'> H,N,Q</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#BF3030'> Negatively Charged </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>\
+        </div>\
+        \
+        <div class='col-md-12'>\
+        <h5 style='color:#1240AB'> Positively Charged </h5>\
+        <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> K,R</p></br>\
+        </div>\
+        " ;
+        $('#edges').html(html);
+
+        var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FF9640'>Small Nonpolar</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#269926'>Hydrophobic</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#CD0077'>Polar</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Negatively Charged</label></a></li>\
+        <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Positively Charged</label></a></li>";
+        $('#filterbyresidue').html(filterhtml);
+        d3.selectAll("circle")
+        .style("fill",function(d) { return d.lesk_color });
+
+        d3.selectAll(".hull")
+        .style("fill",function(d) { return d.lesk_color });
+      }
+
+
+    });
+
+    $('#clearSearchBtn').on("click", function() {
+      d3.selectAll("circle")
+      .style("opacity", 1);
+      if ($('#datebox').val() == "CINEMA") {
+        d3.selectAll("circle")
+        .style("fill", function(d) {return d.cinema_color});
+      }
+
+      if($('#datebox').val() == "CLUSTAL") {
+        d3.selectAll("circle")
+        .style("fill", function(d) {return d.clustal_color});
+      }
+
+      if ($('#datebox').val() == "LESK") {
+        d3.selectAll("circle")
+        .style("fill", function(d) {return d.lesk_color});
+      }
+
+    });
+
+
+    $('#searchNodesBtn').on("click", function() {
+      var searchValue = $('#searchNodes').val().toUpperCase();
+
+      if (searchValue === "") return;
+
+      var filterColor = $('.input-color-picker').colorpicker('getValue');
+      var nodes = d3.selectAll("circle").style("opacity", .3);
+      d3.selectAll("circle").filter(function(d) {
+        var array = d.name;
+
+        if (array.indexOf(searchValue) > -1) {
+          return d;
         }
+      }).style("fill",filterColor).style("opacity", 1);
 
-        var interColor = ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"];
-
-        var graphSelections = { "atoms": ["Acceptor","Aromatic", "Donor","Hydrophobic","Negative","Positive"],
-        "interactions": ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"] };
+    });
 
 
-      });
+    $('body').on("click", ".multiselect-div ul li input", function(event) {
 
-      $('body').on("click", ".multiselect-div ul li input", function(event) {
-
-        var multiselect = $(this).parents('.multiselect-div');
-
-        var selections = [];
-        multiselect.find('input[type="checkbox"]:checked').each(function() {
-          var item = $(this).val();
-          selections.push(item);
-        });
-
-        var text;
-        if (selections.length === 0) text = ( multiselect.hasClass("atom-select") ) ? "Select the types" : "Select the interactions";
-        else if (selections.length > 0 && selections.length <= 1)  text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected type" : selections.length + " selected interaction";
-        else text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected types" : selections.length + " selected interactions";
-        multiselect.find('.multiselect-selected-text').text(text);
-
-        if ( multiselect.hasClass("atom-select") ) graphSelections.atoms = selections;
-        else graphSelections.interactions = selections;
-
-        update_graph();
-      });
+      var interColor = ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"];
 
       var graphSelections = { "atoms": ["Acceptor","Aromatic", "Donor","Hydrophobic","Negative","Positive"],
       "interactions": ["Aromatic stacking","Hydrogen bond","Hydrophobic","Repulsive","Salt bridge"] };
 
-      function update_graph() {
+      var multiselect = $(this).parents('.multiselect-div');
 
-        var links = d3.selectAll(".link").style("opacity",1);
-        var nodes = d3.selectAll(".nodes").style("opacity", .3);
-
-        nodes.filter( function(d) {
-          if ($("#datebox").val() == "CINEMA") {
-            var types = d.cinema_color.split("/");
-          } else if ($("#datebox").val() == "CLUSTAL") {
-            var types = d.clustal_color.split("/");
-          } else if ($("#datebox").val() == "LESK") {
-            var types = d.lesk_color.split("/");
-          }
-          for (var i in types) {
-            if ( $.inArray(types[i], graphSelections.atoms) !== -1 ) return 1;
-          }
-        }).style("opacity", 1);
-
-
-
-        links.filter( function(d) {
-          var types = d.type.split("/");
-          var linkNotSelected = true;
-          for (var i in types) {
-            if ( $.inArray(types[i], graphSelections.interactions) !== -1) {
-              linkNotSelected = false;
-              break;
-            }
-          }
-          return linkNotSelected;
-        }).style("opacity", .15);
-
-        var nodesToResize = [];
-
-        var nodesToHide = {}; // Added in according to the component.
-        var linksToHide = []; // Added in according to the component.
-
-        $(".slider").each(function(d) {
-
-          var slider = $(this).find(".slider-range");
-          var key = get_slider_key( $(this).attr("id") );
-          var min = slider.slider("values",0);
-          var max = slider.slider("values",1);
-
-          if ( key !== "weight" && key !== "edge betweenness centrality" && key !== "component"){
-            nodes.filter( function(d) {
-              var value = roundNumber( d[key], 2 );
-              return ( value < min || value > max );
-            }).style("opacity",0.2).attr("r", radius);
-
-            if ( min !== propertiesExtent[key][0] ) {
-              var filtered = nodes.filter( function(d) {
-                var value = roundNumber( d[key], 2 );
-                return ( value >= min && value <= max );
-              });
-              nodesToResize.push(filtered);
-            }
-          }
-          else if (key === "component") {
-            links.each(function(d){
-              var component = d.source.component;
-              if ( numEdgesByComponents[component] < min || numEdgesByComponents[component] > max) {
-                linksToHide.push(this);
-                nodesToHide[d.source.id] = 1;
-                nodesToHide[d.target.id] = 1;
-              }
-            });
-          }
-          else {
-            links.filter( function(d) {
-              var value = roundNumber( d[key], 2 );
-              return ( value < min || value > max);
-            }).style("opacity",0.2);
-          }
-        });
-
-        for (var i in nodesToResize) {
-          nodesToResize[i].attr("r", radiusHighlight);
-        }
-
-        nodes.filter(function(d) { return ( d.id in nodesToHide ); }).style("opacity", 0.3);
-        for (var i in linksToHide) {
-          d3.select(linksToHide[i]).style("opacity","0.3");
-        }
-
-      }
-
-
-
-      $('.multiselect-div .dropdown-menu input').prop("checked", true);
-
-      function applyGraphSelections() {
-        var nodes = d3.selectAll(".nodes").style("opacity", .3);
-        var links = d3.selectAll(".link").style("opacity", .3);
-
-        nodes.filter( function(d) {
-          var types = d.type.split("/");
-          for (var i in types) {
-            if ( $.inArray(types[i], graphSelections.atoms) !== -1 ) return 1;
-          }
-        }).style("opacity", 1);
-
-        links.filter( function(d) {
-          return ( $.inArray(d.interaction, graphSelections.interactions) !== -1 )
-        }).style("opacity", 1);
-      }
-
-      $(function(){
-        $('.input-color-picker').colorpicker( { input: '' }).colorpicker('setValue', "blue");
+      var selections = [];
+      multiselect.find('input[type="checkbox"]:checked').each(function() {
+        var item = $(this).val();
+        selections.push(item);
       });
 
-      </script>
-      <nav class="navbar navbar-inverse">
-        <div class="container-fluid">
-          <div class="navbar-header">
-            <a class="navbar-brand" href="#">
-              LIGANDS
-            </a>
-          </div>
+      var text;
+      if (selections.length === 0) text = ( multiselect.hasClass("atom-select") ) ? "Select the types" : "Select the interactions";
+      else if (selections.length > 0 && selections.length <= 1)  text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected type" : selections.length + " selected interaction";
+      else text = ( multiselect.hasClass("atom-select") ) ? selections.length + " selected types" : selections.length + " selected interactions";
+      multiselect.find('.multiselect-selected-text').text(text);
 
-
-        </div>
-      </div>
-    </nav>
-
-
-    <div class="col-md-2 col-md-offset-1">
-      <div class="page-header">
-        <h3> Labels </h3>
-      </div>
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">Edges</h3>
-        </div>
-        <div class="panel-body">
-          <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#E36262"> Aromatic stacking</p></br>
-          <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#02B7DB"> Hydrogen bond</p></br>
-          <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#F0ED67"> Hydrophobic</p></br>
-          <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#512B8B"> Repulsive</p></br>
-          <p class="glyphicon glyphicon-stop" aria-hidden="true" style="color:#519136"> Salt bridge</p></br>
-        </div>
-
-        <div class="panel-heading">
-          <h3 class="panel-title" id="titulopanel">CINEMA</h3>
-        </div>
-        <div class="panel-body">
-          <div class="col-md-12" id = "edges">
-
-            <div class='row'>
-              <div class='col-md-12'>
-                <h5 style='color:#1240AB'> Polar Positive </h5>
-                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> H,K,R</p></br>
-              </div>
-
-              <div class='col-md-12'>
-                <h5 style='color:#BF3030'> Polar Negative </h5>
-                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>
-              </div>
-            </div>
-            <div class='row'>
-              <div class='col-md-12'>
-                <h5 style='color:#9F3ED5'> Polar Neutral </h5>
-                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#9F3ED5'> N,Q,S,T</p></br>
-              </div>
-
-              <div class='col-md-12'>
-                <h5 style='color:#4EA429'> Non-Polar Aliphatic </h5>
-                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#4EA429'> A,G,I,L,M,V</p></br>
-              </div>
-            </div>
-            <div class='row'>
-              <div class='col-md-12'>
-                <h5 style='color:#009999'> Non-Polar Rings </h5>
-                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#009999'> F,P,W,Y</p></br>
-              </div>
-
-              <div class='col-md-12'>
-                <h5 style='color:#FFAA00'> Cysteine </h5>
-                <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FFAA00'> C</p></br>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-    </div>
-    <div class="col-md-6" id="grafo" align="center">
-      <div class="page-header">
-        <h3> Grafo </h3>
-      </div>
-    </div>
-    <div class="col-md-2  ">
-      <div class="page-header">
-        <h3> Filtros </h3>
-      </div>
-
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">Filter by link type</h3>
-        </div>
-        <div class="panel-body">
-          <div class="btn-group multiselect-div inter-select">
-            <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-              <span class="multiselect-selected-text">Select the interactions</span> <span class="caret"></b>
-              </button>
-              <ul class="dropdown-menu">
-                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Aromatic stacking">Aromatic stacking</label></a></li>
-                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrogen bond">Hydrogen bond</label></a></li>
-                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Hydrophobic">Hydrophobic</label></a></li>
-                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Repulsive">Repulsive</label></a></li>
-                <li><a tabindex="0"><label class="checkbox"><input type="checkbox" value="Salt bridge">Salt bridge</label></a></li>
-              </ul>
-            </div>
-          </div>
-          <div class="panel-heading">
-            <h3 class="panel-title">Search by residue name</h3>
-          </div>
-          <div class="panel-body">
-            <div class="input-group input-color-picker">
-              <input type="text" class="form-control input-sm" id="searchNodes" placeholder="Ex: THR2, THR, PHE, PHE10">
-              <span class="input-group-addon"><i></i></span>
-            </div>
-
-            <div class="btn-group" role="group" aria-label="...">
-              <button type="button" class="btn btn-success btn-xs" id="searchNodesBtn"><span class="glyphicon glyphicon-search" aria-hidden="true"></span> Search</button>
-              <button type="button" class="btn btn-danger btn-xs" id="clearSearchBtn"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Clear</button>
-            </div>
-          </div>
-
-          <div class="panel-heading">
-            <h3 class="panel-title">Filter by residue type</h3>
-          </div>
-          <div class="panel-body">
-            <div class="btn-group multiselect-div atom-select">
-              <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                <span class="multiselect-selected-text"> Select the residue types </span> <b class="caret"></b>
-              </button>
-              <ul class="dropdown-menu" id = "filterbyresidue">
-                <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Polar Positive</label></a></li>
-                <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Polar Negative</label></a></li>
-                <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#9F3ED5'>Polar Neutral</label></a></li>
-                <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#4EA429'>Non-Polar Aliphatic</label></a></li>
-                <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#009999'>Non-Polar Rings</label></a></li>
-                <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FFAA00'>Cysteine</label></a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="panel-heading">
-            <h3 class="panel-title">Change color pattern</h3>
-          </div>
-
-          <div class = "panel-body">
-            <div class="input-group">
-              <input type="TextBox" ID="datebox" Class="form-control" value = "CINEMA"></input>
-              <div class="input-group-btn">
-                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-                  <span class="caret"></span>
-                </button>
-                <ul id="colorlist" class="dropdown-menu">
-                  <li><a href="#">CINEMA</a></li>
-                  <li><a href="#">CLUSTAL</a></li>
-                  <li><a href="#">LESK</a></li>
-                </ul>
-              </div>
-            </div>
-
-
-          </div>
-
-          <div class="panel-heading">
-            <h3 class="panel-title">3DMol</h3>
-          </div>
-          <div class = "panel-body">
-            <div style="height: 200px; width: 200px; position: relative;" class='col-md-12 viewer_3Dmoljs' data-pdb='1BGA' data-backgroundcolor='0xffffff' data-style='stick'></div>
-          </div>
-        </div>
-
-
-
-
-        <script>
-        $('#clearSearchBtn').on("click", function() {
-          d3.selectAll(".nodes")
-          .style("fill",function(d) { return d.cinema_color })
-          .style("stroke",function(d) { return '#333' })
-          .style("stroke-width", "1.5px")
-          .style("opacity", 1);
-        });
-
-        $('#searchNodesBtn').on("click", function() {
-          var searchValue = $('#searchNodes').val().toUpperCase();
-
-          if (searchValue === "") return;
-
-          var filterColor = $('.input-color-picker').colorpicker('getValue');
-          var nodes = d3.selectAll(".nodes").style("opacity", .3);
-          d3.selectAll(".nodes").filter(function(d) {
-            var array = d.name;
-
-            if (array.indexOf(searchValue) > -1) {
-              return d;
-            }
-          }).style("fill",filterColor).style("stroke",'#333').style("stroke-width", "1.5px").style("opacity", 1);
-
-        });
-
-        $("#colorlist li").click(function(){
-          var choice = $(this).text();
-          console.log($("#datebox").text());
-
-          $('#datebox').val($(this).text());
-          $('#titulopanel').text($(this).text());
-
-          console.log($("#datebox").val());
-
-
-          if (choice == "CINEMA") {
-            var html = "\
-            <div class='row'>\
-            <div class='col-md-12'>\
-            <h5 style='color:#1240AB'> Polar Positive </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> H,K,R</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#BF3030'> Polar Negative </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>\
-            </div>\
-            </div>\
-            <div class='row'>\
-            <div class='col-md-12'>\
-            <h5 style='color:#9F3ED5'> Polar Neutral </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#9F3ED5'> N,Q,S,T</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#4EA429'> Non-Polar Aliphatic </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#4EA429'> A,G,I,L,M,V</p></br>\
-            </div>\
-            </div>\
-            <div class='row'>\
-            <div class='col-md-12'>\
-            <h5 style='color:#009999'> Non-Polar Rings </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#009999'> F,P,W,Y</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#FFAA00'> Cysteine </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FFAA00'> C</p></br>\
-            </div>\
-            </div>\
-            " ;
-
-            var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Polar Positive</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Polar Negative</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#9F3ED5'>Polar Neutral</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#4EA429'>Non-Polar Aliphatic</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#009999'>Non-Polar Rings</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FFAA00'>Cysteine</label></a></li>\
-            ";
-            $('#filterbyresidue').html(filterhtml);
-            $('#edges').html(html);
-            d3.selectAll(".nodes")
-            .style("fill",function(d) { return d.cinema_color });
-          } else if(choice == "CLUSTAL") {
-            var html = "\
-            <div class='row'>\
-            <div class='col-md-12'>\
-            <h5 style='color:#FF9640'> GPST </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FF9640'> G,P,S,T</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#BF3030'> HKR </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> H,K,R</p></br>\
-            </div>\
-            </div>\
-            <div class='row'>\
-            <div class='col-md-12'>\
-            <h5 style='color:#1240AB'> FWY </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> F,W,Y</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#008500'> ILMV </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#008500'> I,L,M,V</p></br>\
-            </div>\
-            " ;
-            $('#edges').html(html);
-
-            var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FF9640'>GPST</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>HKR</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>FWY</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#008500'>ILMV</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#ccc'>Others</label></a></li>\
-            ";
-            $('#filterbyresidue').html(filterhtml);
-
-            d3.selectAll(".nodes")
-            .style("fill",function(d) { return d.clustal_color });
-          } else if (choice == "LESK") {
-            var html = "\
-            <div class='row'>\
-            <div class='col-md-12'>\
-            <h5 style='color:#FF9640'> Small Nonpolar </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#FF9640'> A,G,S,T</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#269926'> Hydrophobic </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#269926'> C,F,I,L,M,P,V,W,Y</p></br>\
-            </div>\
-            </div>\
-            <div class='row'>\
-            <div class='col-md-12'>\
-            <h5 style='color:#CD0077'> Polar </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#CD0077'> H,N,Q</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#BF3030'> Negatively Charged </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#BF3030'> D,E</p></br>\
-            </div>\
-            \
-            <div class='col-md-12'>\
-            <h5 style='color:#1240AB'> Positively Charged </h5>\
-            <p class='glyphicon glyphicon-certificate' aria-hidden='true' style='color:#1240AB'> K,R</p></br>\
-            </div>\
-            " ;
-            $('#edges').html(html);
-
-            var filterhtml = "<li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#FF9640'>Small Nonpolar</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#269926'>Hydrophobic</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#CD0077'>Polar</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#BF3030'>Negatively Charged</label></a></li>\
-            <li><a tabindex='0'><label class='checkbox'><input type='checkbox' value='#1240AB'>Positively Charged</label></a></li>";
-            $('#filterbyresidue').html(filterhtml);
-            d3.selectAll(".nodes")
-            .style("fill",function(d) { return d.lesk_color });
+      if ( multiselect.hasClass("atom-select") ) {
+        graphSelections.atoms = selections;
+        d3.selectAll("circle").style("opacity", 0.2);
+        d3.selectAll("circle").filter( function(d) {
+          if ($("#datebox").val() == "CINEMA") {
+            var types = d.cinema_color;
+          } else if ($("#datebox").val() == "CLUSTAL") {
+            var types = d.clustal_color;
+          } else if ($("#datebox").val() == "LESK") {
+            var types = d.lesk_color;
           }
+            if ( $.inArray(types, graphSelections.atoms) !== -1 ) return 1;
+        }).style("opacity", 1);
+      }
+
+      if ( multiselect.hasClass("inter-select") ) {
+        graphSelections.interactions = selections;
+        d3.selectAll(".link").style("opacity", 1);
+        d3.selectAll(".link").filter( function(d) {
+          console.log(d);
+          var types = d.type;
+          var linkNotSelected = true;
+            if ( $.inArray(types, graphSelections.interactions) !== -1) {
+              linkNotSelected = false;
+            }
+          return linkNotSelected;
+        }).style("opacity", 0.2);
+      }
 
 
-        });
-        </script>
+      //graphSelections.atoms = selections;
+      //else graphSelections.interactions = selections;
 
 
-      </span>
+    });
 
-    </div>
-  </div>
-</div>
-</body>
+    </script>
+
+
+  </body>
 </html>
