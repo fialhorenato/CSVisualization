@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 import sys
+from tqdm import tqdm
 
 interColor = { "Aromatic stacking": "#E36262","Hydrogen bond": "#02B7DB","Hydrophobic": "#F0ED67","Repulsive": "#512B8B","Salt bridge": "#519136" }
 
@@ -62,7 +63,7 @@ groups = []
 links = []
 
 # Get the nodes
-for index, row in csvdf.iterrows():
+for index, row in tqdm(csvdf.iterrows(),desc='GET THE NODES'):
     obj = {};obj2 = {}
     if(row['interaction'] != ""):
         if(row['atom1'] != row['atom2']):
@@ -83,7 +84,7 @@ for index, row in csvdf.iterrows():
 groups = np.unique(groups).tolist()
 
 # Group the nodes
-for node in nodes:
+for node in tqdm(nodes,desc='GROUP THE NODES'):
     stringid = node['name'].split("_")[4]
     residue =  node['name'].split("_")[3]
     stringroup = residue + stringid
@@ -93,7 +94,7 @@ nodes = np.unique(nodes).tolist()
 
 
 # Get the links
-for index, row in csvdf.iterrows():
+for index, row in tqdm(csvdf.iterrows(),desc='GET THE LINKS'):
     link = {}
     if(row['interaction'] != ""):
         if(row['atom1'] != row['atom2']):
