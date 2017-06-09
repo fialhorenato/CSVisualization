@@ -1,7 +1,15 @@
-# .csv files because they're to heavy t
+# .csv files because they're to heavy to load into GIT
 
 *.csv
 
 #.json files
 
 *.json
+
+#.DS_Store file because it doesn't make sense
+
+.DS_Store
+
+#LSCWeb folder because
+
+LSCWeb
