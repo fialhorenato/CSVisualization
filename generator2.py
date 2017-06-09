@@ -26,8 +26,11 @@ def indexinList(list, name):
             break
 
 def findCinemaColor(name):
-    vec = name.split("_")[3];
-    return cinema.values()[cinema.keys().index(vec[0])]
+    try:
+        vec = name.split("_")[3];
+        return cinema.values()[cinema.keys().index(vec[0])]
+    except Exception as e:
+        return "#ccc"
 
 def findLeskColor(name):
     try:
